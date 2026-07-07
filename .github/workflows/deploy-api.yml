@@ -12,6 +12,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      API_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/ming-api
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,5 +24,24 @@ jobs:
       - run: npm --workspace apps/api run lint
       - run: npm --workspace apps/api run test
       - run: npm --workspace apps/api run build
-      - run: curl --fail --request POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Deploy image on Render
+        run: |
+          curl --fail --get --request POST \
+            --data-urlencode "imgURL=${API_IMAGE}:${GITHUB_SHA}" \
+            "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

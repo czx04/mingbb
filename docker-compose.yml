@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: ming-api:local
+    ports:
+      - "4000:4000"
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000

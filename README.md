@@ -14,6 +14,7 @@ Base monorepo:
 - Supabase project
 - Vercel project for `apps/web`
 - Render Web Service for `apps/api`
+- Docker Hub repository for `ming-api`
 
 ## Local setup
 
@@ -26,6 +27,16 @@ npm run dev
 
 Frontend runs at `http://localhost:3000`.
 Backend runs at `http://localhost:4000/api`.
+
+## Docker
+
+Build and run the backend container locally:
+
+```bash
+docker compose up --build api
+```
+
+The API runs at `http://localhost:4000/api`.
 
 ## Environment variables
 
@@ -59,3 +70,24 @@ For Render deployment:
 
 - `RENDER_DEPLOY_HOOK_URL`
 
+For Docker Hub image publishing:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+## Backend deploy flow
+
+The backend deploy workflow is image-based:
+
+1. GitHub Actions verifies `apps/api` with lint, test, and build.
+2. GitHub Actions builds `apps/api/Dockerfile` for `linux/amd64`.
+3. The image is pushed to Docker Hub as `${DOCKERHUB_USERNAME}/ming-api:latest` and `${DOCKERHUB_USERNAME}/ming-api:<commit-sha>`.
+4. GitHub Actions calls the Render deploy hook with the commit SHA image URL.
+5. Render pulls the Docker Hub image and redeploys the service.
+
+In `render.yaml`, replace this placeholder with your real Docker Hub image:
+
+```yaml
+image:
+  url: docker.io/your-dockerhub-username/ming-api:latest
+```
