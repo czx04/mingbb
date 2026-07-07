@@ -9,7 +9,7 @@ Base monorepo:
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - npm 10+
 - Supabase project
 - Vercel project for `apps/web`
