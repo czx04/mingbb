@@ -1,13 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-}
-
-body {
-  min-height: 100vh;
-  background: #f8fafc;
-  color: #0f172a;
-}
+:root { color-scheme: light; --black:#102a43; --ink:#17324d; --muted:#66788a; --paper:#f4f8fb; --cream:#ffffff; --gold:#e8785d; --gold-dark:#cc5d45; --red:#3976a8; --line:#dbe5ed; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin:0; min-height:100vh; color:var(--ink); background:var(--paper); font-family:Inter,Arial,sans-serif; line-height:1.6; }
+a { color:inherit; text-decoration:none; }
+.ref-container { width:min(1160px,calc(100% - 40px)); margin-inline:auto; }
+.notice-bar { position:absolute; inset:0 0 auto; z-index:20; height:40px; display:flex; align-items:center; justify-content:center; gap:8px; background:#3976a8; color:white; font-size:11px; font-weight:700; letter-spacing:.06em; }
+.notice-bar a { color:#ffd5ca; text-decoration:underline; }
+.site-header { position:absolute; inset:40px 0 auto; z-index:20; color:white; border-bottom:1px solid rgba(255,255,255,.2); }
+.nav-shell { width:min(1180px,calc(100% - 32px)); min-height:82px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:28px; }
+.brand { display:flex; align-items:flex-start; flex-direction:column; line-height:.85; }
+.brand b { font-family:Oswald,Impact,sans-serif; font-size:30px; letter-spacing:.08em; }
+.brand span { margin-top:8px; color:var(--gold); font-size:7px; font-weight:800; letter-spacing:.34em; }
+.nav-menu { display:flex; align-items:center; gap:28px; font-size:11px; font-weight:800; text-transform:uppercase; }
+.nav-menu a:hover { color:var(--gold); }
+.nav-actions { display:flex; align-items:center; gap:18px; }
+.lookup-button { padding:8px 0; border-bottom:1px solid rgba(255,255,255,.55); color:white; font-size:11px; font-weight:900; text-transform:uppercase; }
+.lookup-button:hover { color:var(--gold); border-color:var(--gold); }
+.ref-button { min-height:46px; padding:0 24px; display:inline-flex; align-items:center; justify-content:center; border:2px solid transparent; font-size:12px; font-weight:900; text-transform:uppercase; transition:.18s ease; }
+.ref-button:hover { transform:translateY(-2px); }
+.ref-button-outline,.ref-button-ghost { border-color:var(--gold); color:white; }
+.ref-button-outline:hover,.ref-button-ghost:hover { background:var(--gold); }
+.ref-button-gold { background:var(--gold); color:white; }
+.ref-button-gold:hover { background:var(--gold-dark); }
+.ref-button-dark { background:var(--black); color:white; }
+.ref-hero { position:relative; min-height:100vh; display:grid; align-items:center; overflow:hidden; color:white; background-image:url('https://scissorsscotch.com/static/ss-assets/front/ss-design/assets/img/scissors-scotch/sepia/resized/optimized/rita_client2.jpg'); background-position:center; background-size:cover; }
+.ref-hero-overlay { position:absolute; inset:0; background:linear-gradient(90deg,rgba(12,42,67,.76),rgba(21,64,95,.4) 55%,rgba(21,64,95,.1)); }
+.ref-hero-content { position:relative; z-index:1; padding-block:185px 90px; }
+.ref-eyebrow { margin:0 0 18px; color:var(--gold); font-size:11px; font-weight:900; text-transform:uppercase; }
+.ref-eyebrow-red { color:var(--red); }
+.ref-hero h1,.ref-intro h2,.ref-split h2,.location-band h2,.reviews h2,.ref-banner h2 { margin:0; font-family:Oswald,Impact,sans-serif; font-weight:700; line-height:.98; text-transform:uppercase; }
+.ref-hero h1 { max-width:900px; font-size:clamp(3.4rem,8vw,7rem); }
+.ref-lead { max-width:650px; margin:25px 0 0; color:rgba(255,255,255,.8); font-size:clamp(1rem,2vw,1.25rem); }
+.ref-actions { display:flex; gap:14px; margin-top:36px; }
+.scroll-cue { position:absolute; left:50%; bottom:25px; width:24px; height:38px; border:2px solid rgba(255,255,255,.65); border-radius:18px; transform:translateX(-50%); }
+.scroll-cue:after { content:''; position:absolute; left:50%; top:8px; width:4px; height:8px; border-radius:4px; background:white; transform:translateX(-50%); animation:scroll 1.5s infinite; }
+@keyframes scroll { from{opacity:0;transform:translate(-50%,0)} 35%{opacity:1} to{opacity:0;transform:translate(-50%,14px)} }
+.ref-intro { padding:110px 0; background:var(--cream); }
+.ref-narrow { max-width:850px; text-align:center; }
+.ref-intro h2,.ref-split h2,.location-band h2,.reviews h2,.ref-banner h2 { font-size:clamp(2.5rem,5vw,4.6rem); }
+.ref-intro p:last-child { margin:24px 0 0; color:var(--muted); font-size:17px; }
+.ref-split { display:grid; grid-template-columns:minmax(0,1fr) minmax(420px,.82fr); min-height:700px; background:white; }
+.ref-split-media { min-height:520px; background-image:linear-gradient(rgba(20,58,86,.04),rgba(20,58,86,.14)),url('https://scissorsscotch.com/static/ss-assets/front/ss-design/assets/img/scissors-scotch/sepia/resized/optimized/groomingfloor2.jpg'); background-position:center; background-size:cover; }
+.ref-split-copy { align-self:center; padding:84px clamp(28px,6vw,86px); }
+.ref-split-copy>p:not(.ref-eyebrow) { margin:24px 0 0; color:var(--muted); }
+.ref-service-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:34px 0; }
+.ref-service-grid div { padding:18px; border:1px solid var(--line); background:var(--cream); }
+.ref-service-grid strong,.ref-service-grid span { display:block; }
+.ref-service-grid strong { font-family:Oswald,Impact,sans-serif; text-transform:uppercase; }
+.ref-service-grid span { margin-top:5px; color:var(--muted); font-size:12px; }
+.location-band { padding:95px 0; color:white; background:#234e70; }
+.location-grid { display:grid; grid-template-columns:.9fr 1fr; align-items:center; gap:50px; }
+.location-band p:not(.ref-eyebrow) { margin:24px 0 32px; color:rgba(255,255,255,.7); }
+.location-art { min-height:380px; display:flex; align-items:center; justify-content:center; flex-direction:column; border:1px solid #6d91ad; background:radial-gradient(circle,#4f7d9f 0,#173f5f 68%); box-shadow:0 24px 70px rgba(10,42,68,.2); }
+.location-art span { color:var(--gold); font-family:Georgia,serif; font-size:170px; font-style:italic; line-height:1; }
+.location-art small { color:#a9c3d7; letter-spacing:.4em; }
+.reviews { padding:105px 0; background:var(--cream); }
+.section-head { max-width:760px; margin-bottom:44px; }
+.review-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+.review-card { padding:30px; border:1px solid var(--line); background:white; box-shadow:0 16px 40px rgba(0,0,0,.05); }
+.stars { color:var(--gold); }
+.review-card p { margin:18px 0; color:var(--muted); }
+.review-card strong { font-size:12px; }
+.ref-banner { position:relative; min-height:560px; display:grid; align-items:center; color:white; background-image:url('https://scissorsscotch.com/static/ss-assets/front/ss-design/assets/img/scissors-scotch/backgrounds/gear.jpg'); background-position:center; background-size:cover; }
+.ref-banner-overlay { position:absolute; inset:0; background:linear-gradient(90deg,rgba(12,42,67,.74),rgba(57,118,168,.3)); }
+.ref-banner-content { position:relative; z-index:1; }
+.ref-banner .ref-button { margin-top:32px; }
+.ref-footer { padding:75px 0 28px; color:rgba(255,255,255,.75); background:#102a43; }
+.footer-grid { display:grid; grid-template-columns:1.7fr 1fr 1fr; gap:45px; }
+.footer-grid>div:first-child p { max-width:320px; margin-top:22px; }
+.footer-grid h3 { margin:0 0 18px; color:white; font-family:Oswald,Impact,sans-serif; text-transform:uppercase; }
+.footer-grid>div:not(:first-child) a { display:block; margin:9px 0; }
+.footer-grid a:hover { color:var(--gold); }
+.copyright { margin-top:50px; padding-top:24px; border-top:1px solid rgba(255,255,255,.14); font-size:12px; }
+@media(max-width:900px){.nav-menu{display:none}.ref-split,.location-grid,.footer-grid{grid-template-columns:1fr}.ref-split-media{min-height:420px}.review-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.ref-container{width:min(100% - 28px,1160px)}.notice-bar{justify-content:flex-start;padding-left:14px}.nav-shell{min-height:74px;gap:12px}.nav-actions{gap:10px}.nav-actions .ref-button{width:auto;min-height:40px;padding:0 12px}.lookup-button{font-size:10px}.ref-hero-content{padding-block:170px 85px}.ref-hero h1{font-size:3.7rem}.ref-actions{align-items:stretch;flex-direction:column}.ref-actions .ref-button,.ref-split-copy>.ref-button,.location-band .ref-button,.ref-banner .ref-button{width:100%}.ref-intro,.reviews,.location-band{padding:72px 0}.ref-split-copy{padding:65px 22px}.ref-service-grid,.review-grid{grid-template-columns:1fr}.location-art{min-height:300px}.ref-banner{min-height:500px}.footer-grid{gap:35px}}

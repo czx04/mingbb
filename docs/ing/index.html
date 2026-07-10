@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scissors & Scotch Clone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="gift-bar" id="giftBar">
+    <a href="#gift">Need a good-looking gift?</a>
+    <button aria-label="Dismiss gift card message" id="dismissGift">×</button>
+  </div>
+
+  <header class="site-header" id="siteHeader">
+    <nav class="nav-shell" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Scissors and Scotch home">
+        <img src="https://scissorsscotch.com/static/ss-assets/front/ss-design/assets/img/scissors-scotch/logos/ss-logo-white.png" alt="Scissors & Scotch">
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-menu" id="navMenu">
+        <a href="#location">Seattle, WA</a>
+        <a href="#services">Services</a>
+        <a href="#memberships">Memberships</a>
+        <a href="#gift">Gift Cards</a>
+        <a href="#careers">Careers</a>
+        <a href="#account">Account</a>
+        <a class="btn btn-outline" href="#book">Book now</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero section-dark">
+      <div class="hero-bg"></div>
+      <div class="hero-content reveal">
+        <p class="eyebrow">Barber shop. Spa. Lounge.</p>
+        <h1>Welcome to Scissors & Scotch</h1>
+        <p class="lead">A grooming experience where traditional barbering and modern spa services meet your favorite watering hole.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#book">Book now</a>
+          <a class="btn btn-ghost" href="#services">View services</a>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#intro" aria-label="Scroll to intro"></a>
+    </section>
+
+    <section class="intro" id="intro">
+      <div class="container narrow reveal">
+        <p class="eyebrow dark">Do yourself a favor</p>
+        <h2>Get groomed. Then kick back.</h2>
+        <p>Scissors & Scotch is the grooming experience every man deserves. Sit back, relax, get a cut, shave, trim or spa service, then enjoy a cocktail, coffee or cold one in the private lounge.</p>
+      </div>
+    </section>
+
+    <section class="split" id="services">
+      <div class="split-media img-grooming" role="img" aria-label="Barber chair in a grooming shop"></div>
+      <div class="split-copy reveal">
+        <p class="eyebrow dark">Services</p>
+        <h2>Come for the grooming. Stay for the booze.</h2>
+        <p>Friendly, talented people. A polished menu of haircuts, beard trims, shaves and spa services. A private lounge that makes the appointment feel like time well spent.</p>
+        <div class="service-grid">
+          <div><strong>Haircut</strong><span>Classic, modern, cleaned up.</span></div>
+          <div><strong>Beard trim</strong><span>Shape, line, detail.</span></div>
+          <div><strong>Straight razor</strong><span>Hot towel and close shave.</span></div>
+          <div><strong>Spa services</strong><span>Facials, waxing and more.</span></div>
+        </div>
+        <a class="btn btn-dark" href="#book">Book a service</a>
+      </div>
+    </section>
+
+    <section class="location-band" id="location">
+      <div class="container location-grid">
+        <div class="reveal">
+          <p class="eyebrow">Closest shop</p>
+          <h2>Seattle, WA</h2>
+          <p>4715 25th Ave NE<br>Seattle, WA 98105</p>
+          <p><a href="tel:2064201763">(206) 420-1763</a></p>
+          <a class="btn btn-primary" href="#book">Book this shop</a>
+        </div>
+        <div class="map-card reveal" aria-label="Stylized map preview">
+          <span class="pin"></span>
+          <span class="road road-a"></span>
+          <span class="road road-b"></span>
+          <span class="road road-c"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="banner gift" id="gift">
+      <div class="banner-overlay"></div>
+      <div class="container banner-content reveal">
+        <p class="eyebrow">Gift cards</p>
+        <h2>Need a good-looking gift?</h2>
+        <p>A Scissors & Scotch gift card says you care, but in a cooler way.</p>
+        <a class="btn btn-primary" href="#book">Buy a gift card</a>
+      </div>
+    </section>
+
+    <section class="reviews">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow dark">Reviews</p>
+          <h2>The people have spoken</h2>
+        </div>
+        <div class="review-grid">
+          <article class="review-card reveal">
+            <div class="stars">★★★★★</div>
+            <p>Great haircut, relaxed vibe, and a drink while you wait. Exactly what a modern barber shop should feel like.</p>
+            <strong>Michael R.</strong>
+          </article>
+          <article class="review-card reveal">
+            <div class="stars">★★★★★</div>
+            <p>The staff makes the whole thing easy. Good conversation, sharp service and no rushed appointment energy.</p>
+            <strong>Anthony C.</strong>
+          </article>
+          <article class="review-card reveal">
+            <div class="stars">★★★★★</div>
+            <p>Membership is worth it. I show up, get cleaned up and leave feeling like I actually took a break.</p>
+            <strong>James L.</strong>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="split split-reverse" id="memberships">
+      <div class="split-media img-membership" role="img" aria-label="Scissors and Scotch grooming floor"></div>
+      <div class="split-copy reveal">
+        <p class="eyebrow dark">Memberships</p>
+        <h2>We're exclusively inclusive.</h2>
+        <p>You don't need a membership to experience Scissors & Scotch, but packages help you save on services, products, drinks and time spent thinking about your next appointment.</p>
+        <div class="membership-list">
+          <span>Monthly services</span>
+          <span>Member pricing</span>
+          <span>Lounge benefits</span>
+        </div>
+        <a class="btn btn-dark" href="#book">Explore memberships</a>
+      </div>
+    </section>
+
+    <section class="banner missing">
+      <div class="banner-overlay"></div>
+      <div class="container banner-content reveal">
+        <p class="eyebrow">First visit</p>
+        <h2>See what you've been missing</h2>
+        <a class="btn btn-primary" href="#book">Get $20 off</a>
+      </div>
+    </section>
+
+    <section class="careers" id="careers">
+      <div class="container career-grid">
+        <div class="career-photo reveal"></div>
+        <div class="reveal">
+          <p class="eyebrow dark">Careers</p>
+          <h2>We're looking for <span id="typedWord">daymakers.</span></h2>
+          <p>Scissors & Scotch built a culture that prioritizes people: guests, stylists, barbers and the teams who keep the shops moving.</p>
+          <a class="btn btn-dark" href="https://careers.scissorsscotch.com/">View career opportunities</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="banner services-cta" id="book">
+      <div class="banner-overlay"></div>
+      <div class="container banner-content reveal">
+        <p class="eyebrow">Ready?</p>
+        <h2>Look good, feel great, kick ass.</h2>
+        <a class="btn btn-primary" href="#top">Book now</a>
+      </div>
+    </section>
+
+    <section class="press">
+      <div class="container reveal">
+        <p class="eyebrow dark">Press</p>
+        <h2>We're getting buzz</h2>
+        <div class="press-row" aria-label="Press logos">
+          <span>Forbes</span>
+          <span>GQ</span>
+          <span>Esquire</span>
+          <span>Men's Journal</span>
+          <span>Inc.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="account">
+    <div class="container footer-grid">
+      <div>
+        <img src="https://scissorsscotch.com/static/ss-assets/front/ss-design/assets/img/scissors-scotch/logos/ss-logo-white.png" alt="Scissors & Scotch" class="footer-logo">
+        <p>Traditional barbering and modern spa services meet your favorite watering hole.</p>
+      </div>
+      <div>
+        <h3>Account</h3>
+        <a href="#book">Book Now</a>
+        <a href="#account">Login</a>
+        <a href="#memberships">Memberships</a>
+      </div>
+      <div>
+        <h3>Company</h3>
+        <a href="#services">Services</a>
+        <a href="#careers">Careers</a>
+        <a href="#gift">Gift Cards</a>
+      </div>
+      <div>
+        <h3>Resources</h3>
+        <a href="https://franchise.scissorsscotch.com/">Franchising</a>
+        <a href="https://scissorsscotch.com/contact">Contact</a>
+        <a href="https://instagram.com/scissorsscotch">Instagram</a>
+      </div>
+    </div>
+    <div class="container copyright">© 2026 Scissors & Scotch. Static homepage clone for preview.</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
