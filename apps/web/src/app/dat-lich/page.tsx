@@ -25,6 +25,8 @@ export default function BookingPage() {
   const [phone, setPhone] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [note, setNote] = useState("");
+  const [customerStatus, setCustomerStatus] = useState<"idle" | "checking" | "existing" | "new">("idle");
+  const [customerLookupError, setCustomerLookupError] = useState("");
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -105,7 +107,39 @@ export default function BookingPage() {
     (step === 1 && services.length > 0 && Boolean(date && time)) ||
     (step === 2 && serviceIds.length > 0) ||
     (step === 3 && Boolean(barberId)) ||
-    (step === 4 && Boolean(name.trim() && /^0\d{9}$/.test(phone.replace(/\s/g, ""))));
+    (step === 4 && Boolean((customerStatus === "existing" || customerStatus === "new") && name.trim() && /^0\d{9}$/.test(phone.replace(/\s/g, "")) && (!referralCode || /^[A-Z0-9]{5}$/.test(referralCode))));
+
+  function changePhone(value: string) {
+    setPhone(value);
+    setCustomerStatus("idle");
+    setCustomerLookupError("");
+    setName("");
+    setReferralCode("");
+  }
+
+  async function checkCustomer() {
+    const normalizedPhone = phone.replace(/\s/g, "");
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
+      setCustomerLookupError("Vui lòng nhập số điện thoại gồm 10 chữ số.");
+      return;
+    }
+    setCustomerStatus("checking");
+    setCustomerLookupError("");
+    try {
+      const result = await bookingApi.lookupCustomer(normalizedPhone);
+      if (result.exists) {
+        setName(result.customer.fullName);
+        setReferralCode("");
+        setCustomerStatus("existing");
+      } else {
+        setName("");
+        setCustomerStatus("new");
+      }
+    } catch (requestError) {
+      setCustomerStatus("idle");
+      setCustomerLookupError(requestError instanceof Error ? requestError.message : "Không thể kiểm tra số điện thoại.");
+    }
+  }
 
   async function submitBooking(event: FormEvent) {
     event.preventDefault();
@@ -253,17 +287,24 @@ export default function BookingPage() {
             {step === 4 && (
               <fieldset className={styles.fieldset}>
                 <legend>Thông tin của bạn</legend>
-                <p className={styles.hint}>Không cần đăng nhập. Số điện thoại sẽ được dùng để mở Thẻ MING và lưu quyền lợi của bạn.</p>
-                <div className={styles.inputGrid}>
-                  <label>Họ và tên<input type="text" maxLength={100} required placeholder="Nguyễn Văn A" value={name} onChange={(e) => setName(e.target.value)} /></label>
-                  <label>Số điện thoại<input type="tel" inputMode="numeric" maxLength={13} required placeholder="090 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
-                  <label className={styles.fullInput}>Mã người giới thiệu <span>(không bắt buộc)</span>
-                    <input className={styles.codeInput} type="text" maxLength={30} placeholder="Ví dụ: TU27" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase().replace(/\s/g, ""))} />
-                    <small className={styles.inputHelp}>Nhập mã của người đã giới thiệu bạn đến MING.</small>
-                  </label>
-                  <label className={styles.fullInput}>Ghi chú <span>(không bắt buộc)</span><textarea maxLength={1000} placeholder="Kiểu tóc mong muốn hoặc yêu cầu khác..." value={note} onChange={(e) => setNote(e.target.value)} /></label>
+                <p className={styles.hint}>Nhập số điện thoại trước để MING kiểm tra thông tin khách hàng.</p>
+                <div className={styles.phoneLookup}>
+                  <label>Số điện thoại<input type="tel" inputMode="numeric" maxLength={13} required autoFocus placeholder="090 123 4567" value={phone} onChange={(e) => changePhone(e.target.value)} /></label>
+                  <button type="button" onClick={checkCustomer} disabled={customerStatus === "checking" || !/^0\d{9}$/.test(phone.replace(/\s/g, ""))}>{customerStatus === "checking" ? "Đang kiểm tra..." : "Tiếp tục"}</button>
                 </div>
-                {phone && !/^0\d{9}$/.test(phone.replace(/\s/g, "")) && <p className={styles.error}>Vui lòng nhập số điện thoại gồm 10 chữ số.</p>}
+                {customerLookupError && <p className={styles.error}>{customerLookupError}</p>}
+
+                {customerStatus === "existing" && <div className={styles.returningCustomer}><span>✓</span><div><small>Khách hàng đã có tại MING</small><strong>Chào mừng trở lại, {name}</strong><p>Thông tin của bạn đã được tự động điền.</p></div><button type="button" onClick={() => changePhone("")}>Đổi số</button></div>}
+
+                {customerStatus === "new" && <div className={styles.newCustomer}><p><span>Khách hàng mới</span>Số điện thoại này chưa có tại MING. Vui lòng nhập thông tin bên dưới.</p><div className={styles.inputGrid}>
+                  <label className={styles.fullInput}>Họ và tên<input type="text" maxLength={100} required autoFocus placeholder="Nguyễn Văn A" value={name} onChange={(e) => setName(e.target.value)} /></label>
+                  <label className={styles.fullInput}>Mã người giới thiệu <span>(không bắt buộc)</span>
+                    <input className={styles.codeInput} type="text" maxLength={5} placeholder="Ví dụ: TUAN7" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
+                    <small className={styles.inputHelp}>Mã gồm đúng 5 ký tự, ví dụ TUAN7.</small>
+                  </label>
+                </div>{referralCode && !/^[A-Z0-9]{5}$/.test(referralCode) && <p className={styles.error}>Mã giới thiệu phải gồm đúng 5 chữ cái hoặc chữ số.</p>}</div>}
+
+                {(customerStatus === "existing" || customerStatus === "new") && <div className={styles.inputGrid}><label className={styles.fullInput}>Ghi chú <span>(không bắt buộc)</span><textarea maxLength={1000} placeholder="Kiểu tóc mong muốn hoặc yêu cầu khác..." value={note} onChange={(e) => setNote(e.target.value)} /></label></div>}
               </fieldset>
             )}
 

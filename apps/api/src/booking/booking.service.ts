@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 import { SUPABASE_ADMIN } from "../supabase/supabase.constants";
@@ -9,6 +9,7 @@ const TIMEZONE = "Asia/Ho_Chi_Minh";
 const TIMEZONE_OFFSET = "+07:00";
 
 type DatabaseRow = Record<string, unknown>;
+type LookupAttempt = { count: number; resetsAt: number };
 
 type LocationSettings = {
   bookingWindowDays: number;
@@ -19,6 +20,8 @@ type LocationSettings = {
 
 @Injectable()
 export class BookingService {
+  private readonly customerLookupAttempts = new Map<string, LookupAttempt>();
+
   constructor(@Inject(SUPABASE_ADMIN) private readonly supabase: SupabaseClient) {}
 
   async catalog() {
@@ -220,6 +223,19 @@ export class BookingService {
     return data;
   }
 
+  async lookupCustomer(phone: string, clientAddress: string) {
+    const normalizedPhone = phone.replace(/\s/g, "");
+    this.enforceCustomerLookupLimit(clientAddress);
+    const { data, error } = await this.supabase
+      .from("customers")
+      .select("full_name")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+    if (error) throw new BadRequestException("Không thể kiểm tra số điện thoại lúc này");
+    if (!data) return { exists: false as const };
+    return { exists: true as const, customer: { fullName: data.full_name } };
+  }
+
   private async getSettings(): Promise<LocationSettings> {
     const { data, error } = await this.supabase
       .from("location_settings")
@@ -239,6 +255,18 @@ export class BookingService {
     const today = localDateValue(new Date());
     const lastDate = addDays(today, windowDays - 1);
     if (date < today || date > lastDate) throw new BadRequestException("Ngày đặt lịch nằm ngoài khoảng cho phép");
+  }
+
+  private enforceCustomerLookupLimit(clientAddress: string) {
+    const key = `booking-customer|${clientAddress}`;
+    const now = Date.now();
+    const current = this.customerLookupAttempts.get(key);
+    if (!current || current.resetsAt <= now) {
+      this.customerLookupAttempts.set(key, { count: 1, resetsAt: now + 15 * 60 * 1000 });
+      return;
+    }
+    if (current.count >= 30) throw new HttpException("Bạn đã kiểm tra quá nhiều số điện thoại. Vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS);
+    current.count += 1;
   }
 }
 

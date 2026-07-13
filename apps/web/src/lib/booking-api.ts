@@ -69,6 +69,10 @@ export type BookingResult = {
   barberId: string | null;
 };
 
+export type CustomerLookupResult =
+  | { exists: false }
+  | { exists: true; customer: { fullName: string } };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${env.apiUrl}${path}`, {
     ...init,
@@ -89,6 +93,10 @@ export const bookingApi = {
     const query = new URLSearchParams({ date, time, serviceIds: serviceIds.join(",") });
     return request<AvailableBarbers>(`/booking/barbers?${query.toString()}`);
   },
+  lookupCustomer: (phone: string) => request<CustomerLookupResult>("/booking/customers/lookup", {
+    method: "POST",
+    body: JSON.stringify({ phone })
+  }),
   create: (input: CreateBookingInput) => request<BookingResult>("/booking/appointments", {
     method: "POST",
     body: JSON.stringify(input)

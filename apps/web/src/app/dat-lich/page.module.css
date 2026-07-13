@@ -59,6 +59,17 @@
 .inputGrid .codeInput { color: var(--terracotta); font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .fullInput { grid-column: 1 / -1; }
 .inputGrid textarea { min-height: 110px; padding-block: 15px; resize: vertical; }
+.phoneLookup { display: grid; grid-template-columns: 1fr 150px; align-items: end; gap: 10px; }
+.phoneLookup label { display: flex; flex-direction: column; gap: 9px; color: #57564f; font-size: 12px; font-weight: 700; }
+.phoneLookup input { width: 100%; min-height: 56px; padding: 0 16px; border: 1px solid #d1cdc3; outline: none; background: white; color: #171714; font: 700 17px Inter, Arial, sans-serif; letter-spacing: .03em; }
+.phoneLookup input:focus { border-color: #171714; }
+.phoneLookup button { min-height: 56px; border: 0; background: var(--ink); color: white; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.phoneLookup button:disabled { cursor: not-allowed; background: #dcd9d1; color: #99958e; }
+.returningCustomer { margin-top: 22px; padding: 20px; display: flex; align-items: center; gap: 14px; border: 1px solid #a9cfbe; background: #f1faf6; }
+.returningCustomer>span { width: 36px; height: 36px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #2f8b68; color: white; font-weight: 900; }
+.returningCustomer>div { flex: 1; }.returningCustomer small,.returningCustomer strong,.returningCustomer p { display: block; }.returningCustomer small { color: #52816c; font-size: 9px; font-weight: 800; text-transform: uppercase; }.returningCustomer strong { margin-top: 3px; font-size: 14px; }.returningCustomer p { margin: 3px 0 0; color: #6f8579; font-size: 10px; }
+.returningCustomer button { padding: 6px 8px; border: 0; border-bottom: 1px solid #769b8a; color: #527866; background: transparent; font-size: 9px; font-weight: 700; }
+.newCustomer { margin-top: 24px; padding-top: 24px; border-top: 1px solid #dbe5ed; }.newCustomer>p { margin: 0 0 20px; color: #687b8b; font-size: 12px; }.newCustomer>p span { display: block; margin-bottom: 4px; color: var(--terracotta); font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .error { margin: 12px 0 0; color: #aa2c20; font-size: 12px; }
 .requestError { margin-top: 24px; padding: 13px 15px; border: 1px solid #d9a69e; background: #fff4f1; color: #9f2e21; font-size: 12px; line-height: 1.55; }
 .loading, .empty { margin: 24px 0; padding: 18px; border: 1px solid #d6e2eb; color: #75899a; background: white; font-size: 12px; text-align: center; }
@@ -111,6 +122,8 @@
   .barber { min-height: 135px; }
   .avatar { width: 54px; height: 54px; margin-bottom: 13px; }
   .inputGrid { grid-template-columns: 1fr; }
+  .phoneLookup { grid-template-columns: 1fr; }
+  .returningCustomer { align-items: flex-start; flex-wrap: wrap; }
   .fullInput { grid-column: auto; }
   .timeGrid { grid-template-columns: repeat(3, 1fr); }
   .calendar { margin-right: -14px; grid-template-columns: repeat(7, 88px); }

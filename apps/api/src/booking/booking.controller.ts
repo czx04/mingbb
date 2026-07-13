@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
+import { Request } from "express";
 
-import { AvailableBarbersQueryDto, AvailabilityQueryDto, CreateWebsiteBookingDto } from "./booking.dto";
+import { AvailableBarbersQueryDto, AvailabilityQueryDto, CreateWebsiteBookingDto, CustomerLookupDto } from "./booking.dto";
 import { BookingService } from "./booking.service";
 
 @Controller("booking")
@@ -25,5 +26,10 @@ export class BookingController {
   @Post("appointments")
   createAppointment(@Body() input: CreateWebsiteBookingDto) {
     return this.bookingService.createAppointment(input);
+  }
+
+  @Post("customers/lookup")
+  lookupCustomer(@Body() input: CustomerLookupDto, @Req() request: Request) {
+    return this.bookingService.lookupCustomer(input.phone, request.ip || request.socket.remoteAddress || "unknown");
   }
 }

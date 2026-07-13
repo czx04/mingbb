@@ -20,3 +20,7 @@ the backend's `service_role`.
 
 `202607130006_member_cards.sql` backfills a member/referral code for existing
 customers and gives customers created by reception the same automatic code.
+
+`202607130007_friendly_referral_codes.sql` replaces long random member codes
+with memorable five-character codes derived from the customer's first name,
+such as `TUAN7`, while preserving case-insensitive uniqueness.

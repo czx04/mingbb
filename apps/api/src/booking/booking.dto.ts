@@ -46,6 +46,12 @@ export class BookingCustomerDto {
   phone!: string;
 }
 
+export class CustomerLookupDto {
+  @IsString()
+  @Matches(/^0\d{9}$/)
+  phone!: string;
+}
+
 export class CreateWebsiteBookingDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   date!: string;
@@ -69,8 +75,10 @@ export class CreateWebsiteBookingDto {
   customer!: BookingCustomerDto;
 
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) => String(value ?? "").trim().toUpperCase())
   @IsString()
-  @MaxLength(30)
+  @Matches(/^[A-Z0-9]{5}$/)
+  @MaxLength(5)
   referralCode?: string;
 
   @IsOptional()
