@@ -57,6 +57,17 @@ Set these in `apps/api/.env` and Render environment settings:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_ANON_KEY`
 - `FRONTEND_URL`
+- `ADMIN_URL`
+- `TRUST_PROXY_HOPS` (`1` on Render, `0` for direct local access)
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+- `REDIS_KEY_PREFIX`
+- `RATE_LIMIT_HASH_SECRET`
+
+The API uses Upstash Redis for shared rate limits and short-lived booking caches. Use different
+`REDIS_KEY_PREFIX` values for development, staging, and production. Generate
+`RATE_LIMIT_HASH_SECRET` as a long random value; it is used to avoid storing raw IP addresses and
+phone numbers in rate-limit keys.
 
 ## GitHub Actions secrets
 

@@ -5,18 +5,20 @@ import { AdminModule } from "./admin/admin.module";
 import { AppController } from "./app.controller";
 import { BookingModule } from "./booking/booking.module";
 import { MemberModule } from "./member/member.module";
+import { RedisModule } from "./redis/redis.module";
 import { SupabaseModule } from "./supabase/supabase.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
+    RedisModule,
     SupabaseModule,
     AdminModule,
     BookingModule,
-    MemberModule
+    MemberModule,
   ],
-  controllers: [AppController]
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -13,9 +13,21 @@ services:
         value: 4000
       - key: FRONTEND_URL
         sync: false
+      - key: ADMIN_URL
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        value: 1
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: REDIS_KEY_PREFIX
+        value: ming:production:v1
+      - key: RATE_LIMIT_HASH_SECRET
         sync: false
