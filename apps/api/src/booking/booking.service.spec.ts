@@ -21,6 +21,7 @@ describe("BookingService Redis integration", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    rateLimit.enforce.mockResolvedValue(undefined);
     service = new BookingService(
       supabase as unknown as SupabaseClient,
       cache as unknown as CacheService,
@@ -35,16 +36,19 @@ describe("BookingService Redis integration", () => {
     });
     cache.bump.mockResolvedValue(undefined);
 
-    await service.createAppointment({
-      date: "2026-07-20",
-      time: "09:00",
-      serviceIds: ["00000000-0000-4000-8000-000000000010"],
-      barberId: null,
-      customer: {
-        fullName: "Nguyen Van A",
-        phone: "0900000000",
+    await service.createAppointment(
+      {
+        date: "2026-07-20",
+        time: "09:00",
+        serviceIds: ["00000000-0000-4000-8000-000000000010"],
+        barberId: null,
+        customer: {
+          fullName: "Nguyen Van A",
+          phone: "0900000000",
+        },
       },
-    });
+      "203.0.113.10",
+    );
 
     expect(cache.bump).toHaveBeenCalledWith(
       redisScopes.scheduleVersion(LOCATION_ID, "2026-07-20"),
@@ -58,17 +62,77 @@ describe("BookingService Redis integration", () => {
     });
 
     await expect(
-      service.createAppointment({
+      service.createAppointment(
+        {
+          date: "2026-07-20",
+          time: "09:00",
+          serviceIds: ["00000000-0000-4000-8000-000000000010"],
+          barberId: null,
+          customer: {
+            fullName: "Nguyen Van A",
+            phone: "0900000000",
+          },
+        },
+        "203.0.113.10",
+      ),
+    ).rejects.toThrow("database error");
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+
+  it("checks both booking limits before writing to Supabase", async () => {
+    supabase.rpc.mockResolvedValue({
+      data: { bookingCode: "MING-002" },
+      error: null,
+    });
+    cache.bump.mockResolvedValue(undefined);
+
+    await service.createAppointment(
+      {
         date: "2026-07-20",
-        time: "09:00",
+        time: "10:00",
         serviceIds: ["00000000-0000-4000-8000-000000000010"],
         barberId: null,
         customer: {
-          fullName: "Nguyen Van A",
-          phone: "0900000000",
+          fullName: "Nguyen Van B",
+          phone: "0912345678",
         },
-      }),
-    ).rejects.toThrow("database error");
-    expect(cache.bump).not.toHaveBeenCalled();
+      },
+      "203.0.113.10",
+    );
+
+    expect(rateLimit.enforce).toHaveBeenNthCalledWith(
+      1,
+      "booking-create-ip",
+      "203.0.113.10",
+      expect.any(String),
+    );
+    expect(rateLimit.enforce).toHaveBeenNthCalledWith(
+      2,
+      "booking-create-phone",
+      "203.0.113.10|0912345678",
+      expect.any(String),
+    );
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call Supabase when a booking limit is exceeded", async () => {
+    rateLimit.enforce.mockRejectedValueOnce(new Error("rate limited"));
+
+    await expect(
+      service.createAppointment(
+        {
+          date: "2026-07-20",
+          time: "10:00",
+          serviceIds: ["00000000-0000-4000-8000-000000000010"],
+          barberId: null,
+          customer: {
+            fullName: "Nguyen Van B",
+            phone: "0912345678",
+          },
+        },
+        "203.0.113.10",
+      ),
+    ).rejects.toThrow("rate limited");
+    expect(supabase.rpc).not.toHaveBeenCalled();
   });
 });

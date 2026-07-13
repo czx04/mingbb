@@ -14,7 +14,11 @@ import { RateLimitExceededException } from "./rate-limit.exception";
 import { UPSTASH_REDIS } from "./redis.constants";
 
 export type RateLimitPolicy =
-  "booking-customer-lookup" | "member-ip" | "member-phone";
+  | "booking-customer-lookup"
+  | "booking-create-ip"
+  | "booking-create-phone"
+  | "member-ip"
+  | "member-phone";
 
 @Injectable()
 export class RateLimitService {
@@ -31,13 +35,25 @@ export class RateLimitService {
       .replace(/:+$/, "");
     this.secret = configService.getOrThrow<string>("RATE_LIMIT_HASH_SECRET");
     if (this.secret.length < 32) {
-      throw new Error("RATE_LIMIT_HASH_SECRET must contain at least 32 characters");
+      throw new Error(
+        "RATE_LIMIT_HASH_SECRET must contain at least 32 characters",
+      );
     }
     this.limiters = {
       "booking-customer-lookup": createLimiter(
         redis,
         `${prefix}:ratelimit:booking-customer`,
         30,
+      ),
+      "booking-create-ip": createLimiter(
+        redis,
+        `${prefix}:ratelimit:booking-create-ip`,
+        10,
+      ),
+      "booking-create-phone": createLimiter(
+        redis,
+        `${prefix}:ratelimit:booking-create-phone`,
+        3,
       ),
       "member-ip": createLimiter(redis, `${prefix}:ratelimit:member-ip`, 30),
       "member-phone": createLimiter(

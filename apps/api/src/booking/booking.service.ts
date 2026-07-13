@@ -407,8 +407,19 @@ export class BookingService {
     );
   }
 
-  async createAppointment(input: CreateWebsiteBookingDto) {
+  async createAppointment(
+    input: CreateWebsiteBookingDto,
+    clientAddress: string,
+  ) {
     const normalizedPhone = input.customer.phone.replace(/\s/g, "");
+    const message =
+      "Bạn đã tạo quá nhiều lịch hẹn. Vui lòng thử lại sau 15 phút.";
+    await this.rateLimit.enforce("booking-create-ip", clientAddress, message);
+    await this.rateLimit.enforce(
+      "booking-create-phone",
+      `${clientAddress}|${normalizedPhone}`,
+      message,
+    );
     const { data, error } = await this.supabase.rpc("create_website_booking", {
       p_date: input.date,
       p_time: input.time,

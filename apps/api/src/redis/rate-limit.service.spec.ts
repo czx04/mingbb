@@ -38,6 +38,8 @@ describe("RateLimitService", () => {
       }
     ).limiters;
     limiters["booking-customer-lookup"] = limiter;
+    limiters["booking-create-ip"] = limiter;
+    limiters["booking-create-phone"] = limiter;
     limiters["member-ip"] = limiter;
     limiters["member-phone"] = limiter;
   });
