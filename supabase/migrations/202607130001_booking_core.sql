@@ -333,9 +333,9 @@ select
 from generate_series(current_date, current_date + 34, interval '1 day') day
 cross join (values
   ('00000000-0000-4000-8000-000000000101'::uuid, 0, '09:00'::time, '12:00'::time),
-  ('00000000-0000-4000-8000-000000000101'::uuid, 0, '13:30'::time, '21:00'::time),
+  ('00000000-0000-4000-8000-000000000101'::uuid, 0, '13:30'::time, '19:30'::time),
   ('00000000-0000-4000-8000-000000000102'::uuid, 2, '10:00'::time, '13:00'::time),
-  ('00000000-0000-4000-8000-000000000102'::uuid, 2, '14:00'::time, '20:00'::time)
+  ('00000000-0000-4000-8000-000000000102'::uuid, 2, '14:00'::time, '19:30'::time)
 ) shift_data(barber_id, day_off, start_time, end_time)
 where extract(dow from day) <> day_off
 on conflict do nothing;

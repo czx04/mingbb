@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <main id="top">
       <div className="notice-bar">
-        <span>MỞ CỬA MỖI NGÀY · 09:00 — 21:00</span>
+        <span>MỞ CỬA MỖI NGÀY · 09:00 — 19:30</span>
         <a href="/dat-lich">ĐẶT LỊCH TRƯỚC →</a>
       </div>
 
@@ -44,7 +44,7 @@ export default function Home() {
           <span>Hình ảnh thực tế tại quán</span>
         </div>
         <div className="hero-facts" aria-label="Thông tin nổi bật">
-          <div><strong>09:00 — 21:00</strong><span>Mở cửa mỗi ngày</span></div>
+          <div><strong>09:00 — 19:30</strong><span>Mở cửa mỗi ngày</span></div>
           <div><strong>Đặt lịch online</strong><span>Chủ động, không chờ lâu</span></div>
           <div><strong>Không gian thật</strong><span>Thoải mái như ở nhà</span></div>
         </div>
@@ -134,7 +134,7 @@ export default function Home() {
             <h2>Ghế đã sẵn sàng.<br />Chỉ còn chờ bạn.</h2>
           </div>
           <div className="location-details">
-            <div><span>Giờ mở cửa</span><strong>09:00 — 21:00</strong><small>Mỗi ngày trong tuần</small></div>
+            <div><span>Giờ mở cửa</span><strong>09:00 — 19:30</strong><small>Mỗi ngày trong tuần</small></div>
             <div><span>Đặt lịch</span><strong>Trực tuyến 24/7</strong><small>Chọn barber và giờ phù hợp</small></div>
             <a className="ref-button ref-button-gold" href="/dat-lich">Đặt lịch ngay <span>→</span></a>
           </div>

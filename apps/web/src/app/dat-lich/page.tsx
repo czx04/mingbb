@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import barberAvatar from "../../assets/logo.png";
+import SiteHeader from "../../components/SiteHeader";
 import { AvailableBarber, BookingResult, BookingService, BookingSlot, bookingApi } from "../../lib/booking-api";
 import styles from "./page.module.css";
 
@@ -167,9 +168,7 @@ export default function BookingPage() {
   if (bookingResult) {
     return (
       <main className={styles.page}>
-        <header className={styles.header}>
-          <Link className={styles.logo} href="/" aria-label="MING Barber"><strong>MING</strong><span>BARBER</span></Link>
-        </header>
+        <SiteHeader />
         <section className={styles.success}>
           <div className={styles.check}>✓</div>
           <p className={styles.kicker}>Đặt lịch thành công</p>
@@ -189,10 +188,7 @@ export default function BookingPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.logo} href="/" aria-label="MING Barber"><strong>MING</strong><span>BARBER</span></Link>
-        <Link className={styles.backHome} href="/">← Về trang chủ</Link>
-      </header>
+      <SiteHeader />
 
       <div className={styles.layout}>
         <section className={styles.formArea}>

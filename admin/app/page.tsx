@@ -13,6 +13,8 @@ const shortWeekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const months = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 const statuses: AppointmentStatus[] = ["Đang chờ", "Đã xác nhận", "Đang phục vụ", "Hoàn thành", "Đã hủy", "Không đến"];
+const OPENING_TIME = "09:00";
+const CLOSING_TIME = "19:30";
 
 export default function AdminPage() {
   const today = useMemo(() => new Date(), []);
@@ -111,6 +113,7 @@ function ScheduleView({ barbers, schedules, appointments, setSchedules, notify }
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const from = String(data.get("from")); const to = String(data.get("to"));
+    if (from < OPENING_TIME || to > CLOSING_TIME) return notify(`Ca làm phải nằm trong ${OPENING_TIME}–${CLOSING_TIME}`);
     if (from >= to) return notify("Giờ kết thúc phải sau giờ bắt đầu");
     if (editingShifts.some((item) => item.id !== editing?.shift?.id && from < item.to && to > item.from)) return notify("Ca làm này đang bị trùng");
     const shift = { id: editing?.shift?.id || Date.now(), from, to };
@@ -137,7 +140,7 @@ function ScheduleView({ barbers, schedules, appointments, setSchedules, notify }
       if (hasBookings) return notify("Thợ đang có lịch hẹn, hãy chuyển hoặc hủy lịch trước");
       if (await setDayShifts(barberId, [])) notify("Đã đánh dấu thợ nghỉ trong ngày");
     } else {
-      if (await setDayShifts(barberId, [{ id: Date.now(), from: "09:00", to: "12:00" }, { id: Date.now() + 1, from: "13:30", to: "21:00" }])) notify("Đã xếp thợ đi làm với ca mặc định");
+      if (await setDayShifts(barberId, [{ id: Date.now(), from: "09:00", to: "12:00" }, { id: Date.now() + 1, from: "13:30", to: "19:30" }])) notify("Đã xếp thợ đi làm với ca mặc định");
     }
   }
 
@@ -186,8 +189,8 @@ function ScheduleView({ barbers, schedules, appointments, setSchedules, notify }
         </article>;
       })}</div>
     </section>
-    <div className="roster-note"><span>i</span><p><strong>Cách hoạt động:</strong> tắt “Đi làm” để đánh dấu thợ nghỉ cả ngày. Nếu thợ đi làm, bạn có thể giữ một hoặc nhiều ca như `09:00 – 12:00` và `13:30 – 21:00`.</p></div>
-    {editing !== undefined && <Modal onClose={() => setEditing(undefined)} eyebrow={editing.shift ? "CHỈNH SỬA" : "CA LÀM MỚI"} title={editing.shift ? "Sửa ca làm" : `Thêm ca cho ${editingBarber?.name}`} subtitle={`${weekdays[selected.getDay()]}, ngày ${selected.getDate()} ${months[selected.getMonth()].toLowerCase()}`}><form onSubmit={saveShift}><div className="time-range-inputs"><label>Bắt đầu<input name="from" type="time" required defaultValue={editing.shift?.from || "09:00"} /></label><span>–</span><label>Kết thúc<input name="to" type="time" required defaultValue={editing.shift?.to || "12:00"} /></label></div><div className="range-preview"><Icon name="clock" /><div><span>Ca làm của {editingBarber?.name} trong ngày đã chọn.</span><strong>Khung đặt lịch sẽ được tính bên trong ca này.</strong></div></div><ModalActions onClose={() => setEditing(undefined)} submit={editing.shift ? "Lưu thay đổi" : "Thêm ca làm"} /></form></Modal>}
+    <div className="roster-note"><span>i</span><p><strong>Cách hoạt động:</strong> tắt “Đi làm” để đánh dấu thợ nghỉ cả ngày. Nếu thợ đi làm, bạn có thể giữ một hoặc nhiều ca như `09:00 – 12:00` và `13:30 – 19:30`.</p></div>
+    {editing !== undefined && <Modal onClose={() => setEditing(undefined)} eyebrow={editing.shift ? "CHỈNH SỬA" : "CA LÀM MỚI"} title={editing.shift ? "Sửa ca làm" : `Thêm ca cho ${editingBarber?.name}`} subtitle={`${weekdays[selected.getDay()]}, ngày ${selected.getDate()} ${months[selected.getMonth()].toLowerCase()}`}><form onSubmit={saveShift}><div className="time-range-inputs"><label>Bắt đầu<input name="from" type="time" min={OPENING_TIME} max={CLOSING_TIME} required defaultValue={editing.shift?.from || OPENING_TIME} /></label><span>–</span><label>Kết thúc<input name="to" type="time" min={OPENING_TIME} max={CLOSING_TIME} required defaultValue={editing.shift?.to || "12:00"} /></label></div><div className="range-preview"><Icon name="clock" /><div><span>Ca làm của {editingBarber?.name} trong ngày đã chọn.</span><strong>Khung đặt lịch sẽ được tính bên trong ca này.</strong></div></div><ModalActions onClose={() => setEditing(undefined)} submit={editing.shift ? "Lưu thay đổi" : "Thêm ca làm"} /></form></Modal>}
   </>;
 }
 

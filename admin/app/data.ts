@@ -31,7 +31,7 @@ export function makeScheduleSeed(): ScheduleMap {
     result.minh[key] = isSunday ? [] : standardShifts(index * 10);
     result.khoa[key] = date.getDay() === 2 ? [] : [
       { id: 3000 + index * 10, from: "10:00", to: "13:00" },
-      { id: 3001 + index * 10, from: "14:00", to: "20:00" }
+      { id: 3001 + index * 10, from: "14:00", to: "19:30" }
     ];
   }
   return result;
@@ -40,7 +40,7 @@ export function makeScheduleSeed(): ScheduleMap {
 function standardShifts(seed: number): Shift[] {
   return [
     { id: 1000 + seed, from: "09:00", to: "12:00" },
-    { id: 1001 + seed, from: "13:30", to: "21:00" }
+    { id: 1001 + seed, from: "13:30", to: "19:30" }
   ];
 }
 

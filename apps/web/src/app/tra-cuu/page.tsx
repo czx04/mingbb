@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import SiteHeader from "../../components/SiteHeader";
 import { MemberApiError, MemberAppointment, MemberLookupResult, memberApi } from "../../lib/member-api";
 import styles from "./page.module.css";
 
@@ -42,13 +43,7 @@ export default function LookupPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.logo} href="/" aria-label="MING Barber"><strong>MING</strong><span>BARBER</span></Link>
-        <div className={styles.headerActions}>
-          <Link href="/">Trang chủ</Link>
-          <Link className={styles.bookButton} href="/dat-lich">Đặt lịch</Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className={styles.hero}>
         <div className={styles.heroInner}>

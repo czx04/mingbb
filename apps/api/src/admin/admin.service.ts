@@ -19,6 +19,8 @@ import {
 
 const LOCATION_ID = "00000000-0000-4000-8000-000000000001";
 const TIMEZONE_OFFSET = "+07:00";
+const OPENING_TIME = "09:00";
+const CLOSING_TIME = "19:30";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -240,6 +242,10 @@ export class AdminService {
 
   async replaceShifts(barberId: string, date: string, input: ReplaceShiftsDto) {
     input.shifts.forEach((shift, index) => {
+      if (shift.from < OPENING_TIME || shift.to > CLOSING_TIME)
+        throw new BadRequestException(
+          `Ca ${index + 1}: giờ làm việc phải nằm trong ${OPENING_TIME}–${CLOSING_TIME}`,
+        );
       if (shift.from >= shift.to)
         throw new BadRequestException(
           `Ca ${index + 1}: giờ kết thúc phải sau giờ bắt đầu`,
