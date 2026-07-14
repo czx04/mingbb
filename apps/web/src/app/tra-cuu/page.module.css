@@ -74,7 +74,7 @@
   .header { width: calc(100% - 28px); height: 72px; }
   .headerActions > a:first-child { display: none; }
   .hero { padding: 58px 0 65px; }
-  .hero h1 { font-size: 52px; }
+  .hero h1 { font-size: 52px; line-height: 1.15; }
   .heroInner > p:not(.kicker) { margin: 18px auto 28px; font-size: 13px; line-height: 1.65; }
   .search > div { flex-direction: column; }
   .search input { min-height: 54px; }
@@ -87,7 +87,7 @@
   .memberCard { width: 100%; padding: 22px; border-radius: 15px; }
   .cardTop span { font-size: 21px; }
   .cardMain h2 { font-size: 24px; }
-  .memberInfo > h2 { font-size: 38px; }
+  .memberInfo > h2 { font-size: 38px; line-height: 1.15; }
   .memberStats { gap: 8px; }
   .memberStats strong { font-size: 21px; }
   .memberStats span { font-size: 8px; }
