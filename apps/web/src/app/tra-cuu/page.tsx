@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "../../components/SiteHeader";
-import { MemberApiError, MemberAppointment, MemberLookupResult, memberApi } from "../../lib/member-api";
+import { MemberApiError, MemberAppointment, MemberLookupResult, MemberReview, memberApi } from "../../lib/member-api";
 import styles from "./page.module.css";
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
@@ -14,6 +14,11 @@ export default function LookupPage() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewError, setReviewError] = useState("");
 
   async function lookup(event: FormEvent) {
     event.preventDefault();
@@ -28,7 +33,12 @@ export default function LookupPage() {
     setError("");
     setSearched(true);
     try {
-      setResult(await memberApi.lookup(normalized));
+      const nextResult = await memberApi.lookup(normalized);
+      setResult(nextResult);
+      setReviewRating(nextResult.review?.rating ?? 0);
+      setReviewComment(nextResult.review?.comment ?? "");
+      setReviewMessage("");
+      setReviewError("");
     } catch (requestError) {
       setResult(null);
       if (requestError instanceof MemberApiError && requestError.status === 404) {
@@ -41,6 +51,32 @@ export default function LookupPage() {
     }
   }
 
+  async function saveReview(event: FormEvent) {
+    event.preventDefault();
+    if (!result?.canReview) return;
+    if (!reviewRating) {
+      setReviewError("Vui lòng chọn số sao cho trải nghiệm của bạn.");
+      return;
+    }
+
+    setReviewLoading(true);
+    setReviewMessage("");
+    setReviewError("");
+    try {
+      const saved = await memberApi.saveReview(
+        phone.replace(/\s/g, ""),
+        reviewRating,
+        reviewComment,
+      );
+      setResult((current) => current ? { ...current, review: saved.review } : current);
+      setReviewMessage("Đánh giá của bạn đã được lưu.");
+    } catch (requestError) {
+      setReviewError(requestError instanceof Error ? requestError.message : "Không thể lưu đánh giá lúc này.");
+    } finally {
+      setReviewLoading(false);
+    }
+  }
+
   return (
     <main className={styles.page}>
       <SiteHeader />
@@ -49,7 +85,7 @@ export default function LookupPage() {
         <div className={styles.heroInner}>
           <p className={styles.kicker}>MING Member</p>
           <h1>Thẻ MING<br />của bạn.</h1>
-          <p>Một số điện thoại. Mọi cuộc hẹn và quyền lợi tại MING — không cần tài khoản hoặc mật khẩu.</p>
+          <p>Một số điện thoại. Mọi cuộc hẹn và quyền lợi tại MING.</p>
           <form className={styles.search} onSubmit={lookup}>
             <label htmlFor="lookup-phone">Số điện thoại thành viên</label>
             <div>
@@ -87,6 +123,20 @@ export default function LookupPage() {
             </div>
           </div>
 
+          {result.canReview && (
+            <ReviewPanel
+              rating={reviewRating}
+              comment={reviewComment}
+              existingReview={result.review}
+              loading={reviewLoading}
+              message={reviewMessage}
+              error={reviewError}
+              onSubmit={saveReview}
+              onRatingChange={(rating) => { setReviewRating(rating); setReviewMessage(""); setReviewError(""); }}
+              onCommentChange={setReviewComment}
+            />
+          )}
+
           <div className={styles.sectionHeading}>
             <div><p className={styles.kicker}>Lịch hẹn</p><h2>Lịch sắp tới</h2></div>
             <Link href="/dat-lich">+ Đặt lịch mới</Link>
@@ -118,6 +168,64 @@ export default function LookupPage() {
         </section>
       )}
     </main>
+  );
+}
+
+function ReviewPanel({
+  rating,
+  comment,
+  existingReview,
+  loading,
+  message,
+  error,
+  onSubmit,
+  onRatingChange,
+  onCommentChange,
+}: {
+  rating: number;
+  comment: string;
+  existingReview: MemberReview | null;
+  loading: boolean;
+  message: string;
+  error: string;
+  onSubmit: (event: FormEvent) => void;
+  onRatingChange: (rating: number) => void;
+  onCommentChange: (comment: string) => void;
+}) {
+  return (
+    <section className={styles.reviewPanel}>
+      <div className={styles.sectionHeading}>
+        <div><p className={styles.kicker}>Trải nghiệm của bạn</p><h2>{existingReview ? "Đánh giá của bạn" : "Đánh giá dịch vụ"}</h2></div>
+        <span className={styles.reviewHint}>Một đánh giá chung cho trải nghiệm tại MING</span>
+      </div>
+      <form className={styles.reviewForm} onSubmit={onSubmit}>
+        <div className={styles.ratingField}>
+          <span>Chấm điểm</span>
+          <div className={styles.starsInput} aria-label="Chọn số sao">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                className={star <= rating ? styles.starActive : styles.star}
+                aria-label={`${star} sao`}
+                aria-pressed={star === rating}
+                onClick={() => onRatingChange(star)}
+                disabled={loading}
+              >★</button>
+            ))}
+          </div>
+        </div>
+        <label className={styles.commentField}>
+          <span>Nhận xét (không bắt buộc)</span>
+          <textarea maxLength={500} value={comment} onChange={(event) => onCommentChange(event.target.value)} placeholder="Bạn cảm nhận thế nào về trải nghiệm tại MING?" disabled={loading} />
+        </label>
+        <div className={styles.reviewActions}>
+          <button type="submit" disabled={loading}>{loading ? "Đang lưu..." : existingReview ? "Cập nhật đánh giá" : "Gửi đánh giá"}<span>→</span></button>
+          {message && <small className={styles.reviewSuccess} role="status">{message}</small>}
+          {error && <small className={styles.reviewError} role="alert">{error}</small>}
+        </div>
+      </form>
+    </section>
   );
 }
 

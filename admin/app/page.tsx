@@ -3,10 +3,10 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { adminApi } from "./api";
 import { addDays, availableRanges, minutes, toKey } from "./data";
-import type { Appointment, AppointmentStatus, Barber, ScheduleMap, Service, Shift } from "./types";
+import type { Appointment, AppointmentStatus, Barber, Review, ScheduleMap, Service, Shift } from "./types";
 
-type View = "schedule" | "appointments" | "catalog";
-type IconName = "calendar" | "appointments" | "scissors" | "bell" | "plus" | "settings" | "more" | "clock" | "chevron" | "close" | "menu" | "copy" | "trash" | "edit" | "check" | "user" | "phone" | "briefcase";
+type View = "schedule" | "appointments" | "reviews" | "catalog";
+type IconName = "calendar" | "appointments" | "reviews" | "scissors" | "bell" | "plus" | "settings" | "more" | "clock" | "chevron" | "close" | "menu" | "copy" | "trash" | "edit" | "check" | "user" | "phone" | "briefcase";
 
 const weekdays = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 const shortWeekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -23,6 +23,7 @@ export default function AdminPage() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [schedules, setSchedules] = useState<ScheduleMap>({});
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [mobileNav, setMobileNav] = useState(false);
@@ -34,6 +35,7 @@ export default function AdminPage() {
       setBarbers(data.barbers);
       setSchedules(data.schedules);
       setAppointments(data.appointments);
+      setReviews(data.reviews);
       setLoadError("");
     }).catch((error: Error) => setLoadError(error.message)).finally(() => setLoading(false));
   }, []);
@@ -46,6 +48,7 @@ export default function AdminPage() {
   const titles: Record<View, [string, string]> = {
     schedule: ["Lịch làm việc", "Thiết lập ca làm và ngày nghỉ cho từng barber."],
     appointments: ["Lịch hẹn", "Theo dõi và xử lý các lịch khách đã đặt."],
+    reviews: ["Đánh giá", "Duyệt nội dung khách hàng hiển thị trên trang chủ."],
     catalog: ["Dịch vụ & Barber", "Cấu hình dữ liệu được sử dụng trên trang đặt lịch."]
   };
 
@@ -57,6 +60,7 @@ export default function AdminPage() {
         <p>VẬN HÀNH</p>
         <NavButton active={view === "schedule"} icon="calendar" label="Lịch làm việc" onClick={() => changeView("schedule")} />
         <NavButton active={view === "appointments"} icon="appointments" label="Lịch hẹn" badge={String(appointments.filter((item) => item.status === "Đang chờ").length)} onClick={() => changeView("appointments")} />
+        <NavButton active={view === "reviews"} icon="reviews" label="Đánh giá" badge={String(reviews.filter((item) => !item.visible).length)} onClick={() => changeView("reviews")} />
         <p>CẤU HÌNH</p>
         <NavButton active={view === "catalog"} icon="scissors" label="Dịch vụ & Barber" onClick={() => changeView("catalog")} />
       </nav>
@@ -67,7 +71,7 @@ export default function AdminPage() {
     <main className="main-area">
       <header className="topbar">
         <button className="menu-button" onClick={() => setMobileNav(true)}><Icon name="menu" /></button>
-        <div className="page-location"><Icon name={view === "catalog" ? "scissors" : view === "appointments" ? "appointments" : "calendar"} /><span>MING Admin</span><b>/</b><strong>{titles[view][0]}</strong></div>
+        <div className="page-location"><Icon name={view === "catalog" ? "scissors" : view === "reviews" ? "reviews" : view === "appointments" ? "appointments" : "calendar"} /><span>MING Admin</span><b>/</b><strong>{titles[view][0]}</strong></div>
         <div className="top-actions"><button className="icon-button"><Icon name="bell" /><i /></button><span className="divider" /><div className="today"><small>Hôm nay</small><strong>{weekdays[today.getDay()]}, {today.getDate()} {months[today.getMonth()]}</strong></div></div>
       </header>
       <div className="content schedule-content">
@@ -76,6 +80,7 @@ export default function AdminPage() {
         {!loading && !loadError && <>
         {view === "schedule" && <ScheduleView barbers={barbers} schedules={schedules} appointments={appointments} setSchedules={setSchedules} notify={notify} />}
         {view === "appointments" && <AppointmentsView appointments={appointments} setAppointments={setAppointments} schedules={schedules} services={services} barbers={barbers} notify={notify} />}
+        {view === "reviews" && <ReviewsView reviews={reviews} setReviews={setReviews} notify={notify} />}
         {view === "catalog" && <CatalogView services={services} setServices={setServices} barbers={barbers} setBarbers={setBarbers} notify={notify} />}
         </>}
       </div>
@@ -328,6 +333,50 @@ function AppointmentsView({ appointments, setAppointments, schedules, services, 
   </>;
 }
 
+function ReviewsView({ reviews, setReviews, notify }: { reviews: Review[]; setReviews: React.Dispatch<React.SetStateAction<Review[]>>; notify: (message: string) => void }) {
+  const [filter, setFilter] = useState<"all" | "visible" | "hidden">("all");
+  const [busyId, setBusyId] = useState("");
+  const visibleCount = reviews.filter((item) => item.visible).length;
+  const hiddenCount = reviews.length - visibleCount;
+  const average = reviews.length ? (reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length).toFixed(1) : "—";
+  const shown = reviews.filter((item) => filter === "all" || (filter === "visible" ? item.visible : !item.visible));
+
+  async function toggleVisibility(review: Review) {
+    setBusyId(review.customerId);
+    try {
+      await adminApi.updateReviewVisibility(review.customerId, !review.visible);
+      setReviews((current) => current.map((item) => item.customerId === review.customerId ? { ...item, visible: !item.visible } : item));
+      notify(review.visible ? "Đã ẩn đánh giá khỏi trang chủ" : "Đã hiển thị lại đánh giá");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể cập nhật đánh giá");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  return <>
+    <PageHeading eyebrow="NỘI DUNG" title="Quản lý đánh giá" description="Ẩn hoặc hiển thị phản hồi của khách trên carousel trang chủ." action={<div className="review-total"><strong>{reviews.length}</strong><span>đánh giá</span></div>} />
+    <div className="review-admin-stats">
+      <div><span>Tổng đánh giá</span><strong>{reviews.length}</strong></div>
+      <div><span>Đang hiển thị</span><strong>{visibleCount}</strong></div>
+      <div><span>Đã ẩn</span><strong>{hiddenCount}</strong></div>
+      <div><span>Điểm trung bình</span><strong>{average}<small>{reviews.length ? "/5" : ""}</small></strong></div>
+    </div>
+    <section className="panel review-manager">
+      <div className="review-manager-toolbar">
+        <div><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>Tất cả <b>{reviews.length}</b></button><button className={filter === "visible" ? "active" : ""} onClick={() => setFilter("visible")}>Đang hiện <b>{visibleCount}</b></button><button className={filter === "hidden" ? "active" : ""} onClick={() => setFilter("hidden")}>Đã ẩn <b>{hiddenCount}</b></button></div>
+        <span>Ẩn review không xóa nội dung khách đã gửi.</span>
+      </div>
+      {shown.length ? <div className="admin-review-list">{shown.map((review) => <article className={`admin-review-card ${!review.visible ? "review-hidden" : ""}`} key={review.customerId}>
+        <div className="review-person"><div className="avatar avatar-blue">{review.customerName.trim()[0]?.toUpperCase() || "K"}</div><div><strong>{review.customerName}</strong><span>{review.phone}</span></div></div>
+        <div className="review-rating"><div>{Array.from({ length: 5 }, (_, index) => <span className={index < review.rating ? "filled" : ""} key={index}>★</span>)}</div><small>{new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(review.updatedAt))}</small></div>
+        <p>{review.comment || "Khách không để lại nhận xét."}</p>
+        <div className="review-visibility"><span className={review.visible ? "visible" : "hidden"}>{review.visible ? "Đang hiển thị" : "Đã ẩn"}</span><button disabled={busyId === review.customerId} onClick={() => toggleVisibility(review)}><Icon name={review.visible ? "close" : "check"} />{busyId === review.customerId ? "Đang lưu..." : review.visible ? "Ẩn khỏi trang chủ" : "Hiện trên trang chủ"}</button></div>
+      </article>)}</div> : <div className="review-admin-empty"><Icon name="reviews" /><strong>Không có đánh giá phù hợp</strong><span>Thử chọn một bộ lọc khác.</span></div>}
+    </section>
+  </>;
+}
+
 function CatalogView({ services, setServices, barbers, setBarbers, notify }: { services: Service[]; setServices: React.Dispatch<React.SetStateAction<Service[]>>; barbers: Barber[]; setBarbers: React.Dispatch<React.SetStateAction<Barber[]>>; notify: (message: string) => void }) {
   const [tab, setTab] = useState<"services" | "barbers">("services");
   const [addingService, setAddingService] = useState(false);
@@ -422,7 +471,7 @@ function statusTone(status: AppointmentStatus) { return status === "Đang chờ"
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
-    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>, appointments: <><path d="M8 6h13M8 12h13M8 18h13"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></>, scissors: <><circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="m8.6 8.5 12.4-6M8.6 15.5 21 22M8.6 8.5 12 12l-3.4 3.5"/></>, bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></>, plus: <path d="M12 5v14M5 12h14"/>, settings: <><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6a8 8 0 0 0-1.5.9l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2.2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.5.9l.3 2.6h4l.3-2.6a8 8 0 0 0 1.5-.9l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"/></>, more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>, clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>, chevron: <path d="m9 18 6-6-6-6"/>, close: <path d="M6 6l12 12M18 6 6 18"/>, menu: <path d="M4 7h16M4 12h16M4 17h16"/>, copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></>, trash: <><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></>, edit: <><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></>, check: <path d="m5 12 4 4L19 6"/>, user: <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>, phone: <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/>, briefcase: <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18"/></>
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>, appointments: <><path d="M8 6h13M8 12h13M8 18h13"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></>, reviews: <><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/></>, scissors: <><circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="m8.6 8.5 12.4-6M8.6 15.5 21 22M8.6 8.5 12 12l-3.4 3.5"/></>, bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></>, plus: <path d="M12 5v14M5 12h14"/>, settings: <><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6a8 8 0 0 0-1.5.9l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2.2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.5.9l.3 2.6h4l.3-2.6a8 8 0 0 0 1.5-.9l2.4-1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"/></>, more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>, clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>, chevron: <path d="m9 18 6-6-6-6"/>, close: <path d="M6 6l12 12M18 6 6 18"/>, menu: <path d="M4 7h16M4 12h16M4 17h16"/>, copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></>, trash: <><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></>, edit: <><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></>, check: <path d="m5 12 4 4L19 6"/>, user: <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>, phone: <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/>, briefcase: <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18"/></>
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>;
 }

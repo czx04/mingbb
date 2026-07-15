@@ -38,6 +38,7 @@ export class AdminService {
       skillsResult,
       shiftsResult,
       appointmentsResult,
+      reviewsResult,
     ] = await Promise.all([
       this.supabase
         .from("services")
@@ -65,6 +66,11 @@ export class AdminService {
         .eq("location_id", LOCATION_ID)
         .order("starts_at", { ascending: false })
         .limit(1000),
+      this.supabase
+        .from("customer_reviews")
+        .select("customer_id,rating,comment,is_visible,updated_at,customers(full_name,phone)")
+        .order("updated_at", { ascending: false })
+        .limit(1000),
     ]);
 
     [
@@ -73,6 +79,7 @@ export class AdminService {
       skillsResult,
       shiftsResult,
       appointmentsResult,
+      reviewsResult,
     ].forEach((result) => {
       if (result.error) throw new BadRequestException(result.error.message);
     });
@@ -136,6 +143,18 @@ export class AdminService {
         };
       },
     );
+    const reviews = ((reviewsResult.data ?? []) as DatabaseRow[]).map((row) => {
+      const customer = relationOne(row.customers);
+      return {
+        customerId: row.customer_id,
+        customerName: customer?.full_name ?? "Khách hàng",
+        phone: customer?.phone ?? "",
+        rating: Number(row.rating),
+        comment: row.comment ?? "",
+        visible: Boolean(row.is_visible),
+        updatedAt: row.updated_at,
+      };
+    });
 
     return {
       locationId: LOCATION_ID,
@@ -143,7 +162,21 @@ export class AdminService {
       barbers,
       schedules,
       appointments,
+      reviews,
     };
+  }
+
+  async updateReviewVisibility(customerId: string, visible: boolean) {
+    const { data, error } = await this.supabase
+      .from("customer_reviews")
+      .update({ is_visible: visible })
+      .eq("customer_id", customerId)
+      .select("customer_id")
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    if (!data) throw new NotFoundException("Không tìm thấy đánh giá");
+    await this.cache.delete(this.cache.key("public-reviews"));
+    return { ok: true };
   }
 
   async createService(input: ServiceInputDto) {

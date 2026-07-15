@@ -49,6 +49,25 @@
 .memberStats span { color: #83766e; font-size: 9px; }
 .referralStat { margin-top: 18px !important; font-size: 11px !important; }
 .referralStat strong { color: var(--terracotta); }
+.reviewPanel { margin: 0 0 70px; padding: 30px; border: 1px solid #dbe5ed; background: white; }
+.reviewPanel .sectionHeading { margin: 0 0 24px; }
+.reviewHint { color: #75899a; font-size: 11px; }
+.reviewForm { display: grid; grid-template-columns: 190px 1fr auto; align-items: end; gap: 20px; }
+.ratingField, .commentField { display: flex; flex-direction: column; gap: 9px; }
+.ratingField > span, .commentField > span { color: #718494; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.starsInput { display: flex; gap: 4px; }
+.starsInput button { padding: 0; border: 0; color: #d7e2ea; background: transparent; font-size: 27px; line-height: 1; cursor: pointer; }
+.starsInput button.starActive { color: #d3a443; }
+.starsInput button:disabled { cursor: wait; opacity: .65; }
+.commentField textarea { min-height: 74px; padding: 12px; border: 1px solid #dbe5ed; outline: 0; resize: vertical; color: var(--ink); font: inherit; font-size: 12px; }
+.commentField textarea:focus { border-color: var(--terracotta); }
+.reviewActions { display: flex; align-items: flex-end; flex-direction: column; gap: 8px; }
+.reviewActions > button { min-height: 45px; padding: 0 18px; border: 0; background: var(--terracotta); color: white; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+.reviewActions > button span { margin-left: 14px; }
+.reviewActions > button:disabled { cursor: wait; opacity: .7; }
+.reviewSuccess, .reviewError { font-size: 10px; text-align: right; }
+.reviewSuccess { color: #427d55; }
+.reviewError { color: var(--terracotta); }
 .sectionHeading { margin: 55px 0 22px; display: flex; align-items: end; justify-content: space-between; }
 .sectionHeading h2 { margin: 0; font-family: Oswald, Impact, sans-serif; font-size: 36px; text-transform: uppercase; }
 .sectionHeading > a { color: var(--terracotta); font-size: 12px; font-weight: 800; }
@@ -91,6 +110,13 @@
   .memberStats { gap: 8px; }
   .memberStats strong { font-size: 21px; }
   .memberStats span { font-size: 8px; }
+  .reviewPanel { margin-bottom: 52px; padding: 22px 16px; }
+  .reviewPanel .sectionHeading { gap: 8px; }
+  .reviewHint { font-size: 10px; }
+  .reviewForm { grid-template-columns: 1fr; gap: 18px; }
+  .reviewActions { align-items: stretch; }
+  .reviewActions > button { width: 100%; }
+  .reviewSuccess, .reviewError { text-align: left; }
   .appointment { grid-template-columns: 65px 1fr; padding: 16px; gap: 15px; }
   .appointmentMeta { grid-column: 2; align-items: flex-start; flex-direction: row; }
   .sectionHeading { align-items: flex-start; flex-direction: column; gap: 12px; }

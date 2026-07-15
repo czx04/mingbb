@@ -128,3 +128,8 @@ export class AssignBarberDto {
   @IsUUID("4")
   barberId!: string;
 }
+
+export class ReviewVisibilityDto {
+  @IsBoolean()
+  visible!: boolean;
+}

@@ -2,20 +2,9 @@ import Image from "next/image";
 import logo from "../assets/logo.png";
 import shopInterior from "../assets/shop-interior.png";
 import MobileBookingBar from "../components/MobileBookingBar";
+import ReviewsCarousel from "../components/ReviewsCarousel";
 import SiteHeader from "../components/SiteHeader";
-
-const services = [
-  { index: "01", name: "Cắt tóc", description: "Tư vấn kiểu tóc, cắt và tạo kiểu hoàn thiện.", price: "120.000đ" },
-  { index: "02", name: "Cạo mặt", description: "Khăn nóng thư giãn và đường cạo sạch gọn.", price: "80.000đ" },
-  { index: "03", name: "Chăm sóc râu", description: "Tỉa form, tạo đường nét và dưỡng râu.", price: "Liên hệ" },
-  { index: "04", name: "Combo MING", description: "Trải nghiệm chăm sóc trọn vẹn trong một buổi.", price: "190.000đ" }
-];
-
-const reviews = [
-  ["Không gian đẹp, barber tư vấn kỹ và cắt rất đúng ý. Mình chắc chắn sẽ quay lại.", "ANH TUẤN"],
-  ["Đặt lịch nhanh, tới nơi không phải chờ. Một trải nghiệm rất chỉn chu.", "MINH QUÂN"],
-  ["Dịch vụ tốt, nhân viên thân thiện. Thực sự thư giãn sau một ngày dài.", "HOÀNG NAM"]
-];
+import { featuredServices } from "../lib/services";
 
 export default function Home() {
   return (
@@ -50,15 +39,6 @@ export default function Home() {
         </div>
       </section>
 
-      <aside className="mobile-member-promo">
-        <div>
-          <p className="ref-eyebrow">Dành cho khách hàng MING</p>
-          <h2>Một số điện thoại.<br />Mọi quyền lợi.</h2>
-          <p>Xem điểm thưởng, lịch hẹn và mã giới thiệu trong Thẻ MING của bạn.</p>
-        </div>
-        <a href="/tra-cuu">Mở Thẻ MING <span>→</span></a>
-      </aside>
-
       <section className="ref-intro" id="gioi-thieu">
         <div className="ref-container intro-grid">
           <div>
@@ -66,11 +46,11 @@ export default function Home() {
             <span className="section-number">01</span>
           </div>
           <div className="intro-copy">
-            <h2>Không cần cầu kỳ.<br />Chỉ cần đúng chất.</h2>
-            <p>MING mang tinh thần barber truyền thống vào một không gian gần gũi và hiện đại. Mỗi đường kéo, mỗi lời tư vấn đều hướng đến một phiên bản gọn gàng, tự tin và phù hợp với chính bạn.</p>
+            <h2>Barber truyền thống.<br />Tinh thần hiện đại.</h2>
+            <p>MING mang đến cho bạn một trải nghiệm barber được xây dựng từ tay nghề, sự chính xác và cách phục vụ tử tế. Mỗi kiểu tóc đều được tư vấn dựa trên khuôn mặt, chất tóc và phong cách sống — để tạo nên một diện mạo gọn gàng, tự tin và phù hợp lâu dài.</p>
             <div className="intro-values">
-              <div><strong>Tận tâm</strong><span>Tư vấn dựa trên khuôn mặt và phong cách sống.</span></div>
-              <div><strong>Chỉn chu</strong><span>Chăm chút từ lúc bạn bước vào đến khi rời ghế.</span></div>
+              <div><strong>Hiểu đúng</strong><span>Tư vấn dựa trên đặc điểm và nhu cầu thực tế của từng khách hàng.</span></div>
+              <div><strong>Làm kỹ</strong><span>Chú trọng từng đường cắt, đường cạo và bước hoàn thiện cuối cùng.</span></div>
             </div>
           </div>
         </div>
@@ -83,7 +63,7 @@ export default function Home() {
             <p>Giá rõ ràng, thời gian chủ động. Bạn có thể chọn một hoặc kết hợp nhiều dịch vụ khi đặt lịch.</p>
           </div>
           <div className="service-list">
-            {services.map((service) => (
+            {featuredServices.map((service) => (
               <article className="service-item" key={service.name}>
                 <span>{service.index}</span>
                 <div><h3>{service.name}</h3><p>{service.description}</p></div>
@@ -92,6 +72,7 @@ export default function Home() {
               </article>
             ))}
           </div>
+          <div className="services-more"><a href="/dich-vu">Xem tất cả dịch vụ <span>→</span></a></div>
         </div>
       </section>
 
@@ -116,14 +97,7 @@ export default function Home() {
             <div><p className="ref-eyebrow ref-eyebrow-red">Khách hàng nói gì</p><h2>Người thật.<br />Cảm nhận thật.</h2></div>
             <p>Sự hài lòng của khách hàng là điều khiến MING tiếp tục chăm chút cho từng cuộc hẹn.</p>
           </div>
-          <div className="review-grid">
-            {reviews.map(([review, name], index) => (
-              <article className="review-card" key={name}>
-                <div className="review-top"><span>0{index + 1}</span><div className="stars">★★★★★</div></div>
-                <p>“{review}”</p><strong>{name}</strong>
-              </article>
-            ))}
-          </div>
+          <ReviewsCarousel />
         </div>
       </section>
 

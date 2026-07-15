@@ -39,6 +39,14 @@ export class CacheService {
     }
   }
 
+  async delete(key: string): Promise<void> {
+    try {
+      await this.redis.del(key);
+    } catch (error) {
+      this.logger.warn(`Redis DEL failed for ${key}: ${errorMessage(error)}`);
+    }
+  }
+
   async getOrSet<T>(
     key: string,
     ttlSeconds: number,

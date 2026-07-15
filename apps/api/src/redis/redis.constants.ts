@@ -5,6 +5,7 @@ export const CACHE_TTL_SECONDS = {
   settings: 60,
   availability: 15,
   barbers: 10,
+  publicReviews: 60,
 } as const;
 
 export const redisScopes = {

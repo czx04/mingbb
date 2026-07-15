@@ -9,6 +9,7 @@ describe("CacheService", () => {
     get: jest.fn(),
     set: jest.fn(),
     incr: jest.fn(),
+    del: jest.fn(),
   };
   const config = {
     get: jest.fn().mockReturnValue("ming:test:v1"),
@@ -75,5 +76,12 @@ describe("CacheService", () => {
     expect(redis.incr).toHaveBeenCalledWith(
       "ming:test:v1:version:schedule:location:2026-07-13",
     );
+  });
+
+  it("deletes a namespaced cache key", async () => {
+    redis.del.mockResolvedValue(1);
+
+    await service.delete(service.key("public-reviews"));
+    expect(redis.del).toHaveBeenCalledWith("ming:test:v1:public-reviews");
   });
 });

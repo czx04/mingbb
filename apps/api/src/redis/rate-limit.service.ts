@@ -18,7 +18,9 @@ export type RateLimitPolicy =
   | "booking-create-ip"
   | "booking-create-phone"
   | "member-ip"
-  | "member-phone";
+  | "member-phone"
+  | "member-review-ip"
+  | "member-review-phone";
 
 @Injectable()
 export class RateLimitService {
@@ -60,6 +62,16 @@ export class RateLimitService {
         redis,
         `${prefix}:ratelimit:member-phone`,
         10,
+      ),
+      "member-review-ip": createLimiter(
+        redis,
+        `${prefix}:ratelimit:member-review-ip`,
+        10,
+      ),
+      "member-review-phone": createLimiter(
+        redis,
+        `${prefix}:ratelimit:member-review-phone`,
+        5,
       ),
     };
   }

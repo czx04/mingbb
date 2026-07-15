@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -6,8 +7,11 @@ import {
 } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { CacheService } from "../redis/cache.service";
+import { CACHE_TTL_SECONDS } from "../redis/redis.constants";
 import { RateLimitService } from "../redis/rate-limit.service";
 import { SUPABASE_ADMIN } from "../supabase/supabase.constants";
+import { MemberReviewDto } from "./member.dto";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -16,7 +20,42 @@ export class MemberService {
   constructor(
     @Inject(SUPABASE_ADMIN) private readonly supabase: SupabaseClient,
     private readonly rateLimit: RateLimitService,
+    private readonly cache: CacheService,
   ) {}
+
+  async publicReviews() {
+    return this.cache.getOrSet(
+      this.cache.key("public-reviews"),
+      CACHE_TTL_SECONDS.publicReviews,
+      () => this.loadPublicReviews(),
+    );
+  }
+
+  private async loadPublicReviews() {
+    const reviewsResult = await this.supabase
+      .from("customer_reviews")
+      .select("rating,comment,updated_at,customers(full_name)")
+      .not("comment", "is", null)
+      .eq("is_visible", true)
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (reviewsResult.error)
+      throw new ServiceUnavailableException("Không thể tải đánh giá lúc này");
+
+    return {
+      reviews: ((reviewsResult.data ?? []) as DatabaseRow[]).flatMap((row) => {
+        const comment = String(row.comment ?? "").trim();
+        if (!comment) return [];
+        const customer = relationOne(row.customers);
+        return [{
+          rating: Number(row.rating),
+          comment,
+          customerName: displayCustomerName(String(customer?.full_name ?? "Khách MING")),
+          updatedAt: String(row.updated_at),
+        }];
+      }),
+    };
+  }
 
   async lookup(phone: string, clientAddress: string) {
     const normalizedPhone = phone.replace(/\s/g, "");
@@ -43,7 +82,7 @@ export class MemberService {
 
     const customer = customerResult.data as DatabaseRow;
     const customerId = String(customer.id);
-    const [appointmentsResult, referralsResult] = await Promise.all([
+    const [appointmentsResult, referralsResult, completedCountResult, reviewResult] = await Promise.all([
       this.supabase
         .from("appointments")
         .select(
@@ -56,8 +95,23 @@ export class MemberService {
         .from("customers")
         .select("id", { count: "exact", head: true })
         .eq("referred_by_customer_id", customerId),
+      this.supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", customerId)
+        .eq("status", "completed"),
+      this.supabase
+        .from("customer_reviews")
+        .select("rating,comment,created_at,updated_at")
+        .eq("customer_id", customerId)
+        .maybeSingle(),
     ]);
-    if (appointmentsResult.error || referralsResult.error) {
+    if (
+      appointmentsResult.error ||
+      referralsResult.error ||
+      completedCountResult.error ||
+      reviewResult.error
+    ) {
       throw new ServiceUnavailableException(
         "Không thể tải thông tin Thẻ MING lúc này",
       );
@@ -82,6 +136,7 @@ export class MemberService {
           ),
       )
       .sort((a, b) => b.startsAt - a.startsAt);
+    const completedVisits = completedCountResult.count ?? 0;
 
     return {
       member: {
@@ -89,16 +144,79 @@ export class MemberService {
         maskedPhone: maskPhone(String(customer.phone)),
         referralCode: customer.referral_code ?? null,
         loyaltyPoints: Number(customer.loyalty_points ?? 0),
-        completedVisits: appointments.filter(
-          (appointment) => appointment.status === "completed",
-        ).length,
+        completedVisits,
         referralCount: referralsResult.count ?? 0,
         memberSince: customer.created_at,
       },
+      canReview: completedVisits > 0,
+      review: reviewResult.data ? toMemberReview(reviewResult.data as DatabaseRow) : null,
       upcomingAppointments,
       appointmentHistory,
     };
   }
+
+  async saveReview(input: MemberReviewDto, clientAddress: string) {
+    const normalizedPhone = input.phone.replace(/\s/g, "");
+    const message =
+      "Bạn đã gửi đánh giá quá nhiều lần. Vui lòng thử lại sau 15 phút.";
+    await this.rateLimit.enforce("member-review-ip", clientAddress, message);
+    await this.rateLimit.enforce(
+      "member-review-phone",
+      `${clientAddress}|${normalizedPhone}`,
+      message,
+    );
+
+    const customerResult = await this.supabase
+      .from("customers")
+      .select("id")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+    if (customerResult.error)
+      throw new ServiceUnavailableException("Không thể lưu đánh giá lúc này");
+    if (!customerResult.data)
+      throw new NotFoundException("Không tìm thấy Thẻ MING cho số điện thoại này");
+
+    const customerId = String((customerResult.data as DatabaseRow).id);
+    const completedResult = await this.supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("status", "completed");
+    if (completedResult.error)
+      throw new ServiceUnavailableException("Không thể xác minh lịch sử dịch vụ lúc này");
+    if (!completedResult.count)
+      throw new ForbiddenException(
+        "Bạn chỉ có thể đánh giá sau khi đã hoàn thành một dịch vụ tại MING",
+      );
+
+    const reviewResult = await this.supabase
+      .from("customer_reviews")
+      .upsert(
+        {
+          customer_id: customerId,
+          rating: input.rating,
+          comment: input.comment?.trim() || null,
+        },
+        { onConflict: "customer_id" },
+      )
+      .select("rating,comment,created_at,updated_at")
+      .single();
+    if (reviewResult.error || !reviewResult.data)
+      throw new ServiceUnavailableException("Không thể lưu đánh giá lúc này");
+
+    await this.cache.delete(this.cache.key("public-reviews"));
+
+    return { review: toMemberReview(reviewResult.data as DatabaseRow) };
+  }
+}
+
+function toMemberReview(row: DatabaseRow) {
+  return {
+    rating: Number(row.rating),
+    comment: row.comment ? String(row.comment) : null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
 }
 
 function toMemberAppointment(row: DatabaseRow) {
@@ -137,6 +255,11 @@ function relationMany(value: unknown): DatabaseRow[] {
 
 function maskPhone(phone: string) {
   return `${phone.slice(0, 3)} *** ${phone.slice(-4)}`;
+}
+
+function displayCustomerName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  return (parts.at(-1) || "Khách MING").toLocaleUpperCase("vi-VN");
 }
 
 function statusLabel(status: string) {

@@ -42,6 +42,8 @@ describe("RateLimitService", () => {
     limiters["booking-create-phone"] = limiter;
     limiters["member-ip"] = limiter;
     limiters["member-phone"] = limiter;
+    limiters["member-review-ip"] = limiter;
+    limiters["member-review-phone"] = limiter;
   });
 
   afterEach(() => {

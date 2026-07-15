@@ -5,6 +5,7 @@ import {
   AssignBarberDto,
   CreateAppointmentDto,
   ReplaceShiftsDto,
+  ReviewVisibilityDto,
   ServiceInputDto,
   UpdateAppointmentStatusDto
 } from "./admin.dto";
@@ -67,5 +68,13 @@ export class AdminController {
   @Patch("appointments/:id/barber")
   assignBarber(@Param("id") id: string, @Body() input: AssignBarberDto) {
     return this.adminService.assignBarber(id, input.barberId);
+  }
+
+  @Patch("reviews/:customerId/visibility")
+  updateReviewVisibility(
+    @Param("customerId") customerId: string,
+    @Body() input: ReviewVisibilityDto,
+  ) {
+    return this.adminService.updateReviewVisibility(customerId, input.visible);
   }
 }

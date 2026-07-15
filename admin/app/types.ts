@@ -39,3 +39,13 @@ export type Appointment = {
   status: AppointmentStatus;
   note: string;
 };
+
+export type Review = {
+  customerId: string;
+  customerName: string;
+  phone: string;
+  rating: number;
+  comment: string;
+  visible: boolean;
+  updatedAt: string;
+};
