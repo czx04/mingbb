@@ -27,6 +27,11 @@ npm run dev
 
 Frontend runs at `http://localhost:3000`.
 Backend runs at `http://localhost:4000/api`.
+Admin runs at `http://localhost:3001`.
+
+The development runner starts all three services and stores Next.js development artifacts in
+`.next-dev`. Production builds continue to use `.next`, so running a build cannot overwrite files
+used by an active development server.
 
 ## Docker
 

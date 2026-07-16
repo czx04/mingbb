@@ -39,13 +39,53 @@ export class ServiceInputDto {
   @Min(0)
   price!: number;
 
+  @IsUUID("4")
+  categoryId!: string;
+
+  @IsString()
+  shortDescription!: string;
+
+  @IsString()
+  description!: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(10000)
+  sortOrder!: number;
+
+  @IsIn(["fixed", "from", "contact"])
+  priceDisplayMode!: "fixed" | "from" | "contact";
+
   @IsBoolean()
   active!: boolean;
+
+  @IsBoolean()
+  published!: boolean;
+
+  @IsBoolean()
+  featured!: boolean;
+
+  @IsBoolean()
+  onlineBookable!: boolean;
 
   @IsArray()
   @ArrayUnique()
   @IsUUID("4", { each: true })
   barberIds!: string[];
+}
+
+export class ServiceCategoryInputDto {
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsInt()
+  @Min(0)
+  @Max(10000)
+  sortOrder!: number;
+
+  @IsBoolean()
+  active!: boolean;
 }
 
 export class BarberInputDto {

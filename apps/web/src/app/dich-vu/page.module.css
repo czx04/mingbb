@@ -2,7 +2,7 @@
 .hero { padding: 94px 0 0; color: white; background: var(--black); }
 .heroInner { width: min(1180px, calc(100% - 48px)); min-height: 415px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 60px; }
 .eyebrow, .kicker { margin: 0 0 20px; color: var(--gold); font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-.hero h1 { margin: 0 0 74px; font-family: Oswald, Impact, sans-serif; font-size: clamp(4.6rem, 10vw, 9rem); font-weight: 600; line-height: .88; letter-spacing: -.04em; text-transform: uppercase; }
+.hero h1 { margin: 0 0 74px; font-family: Oswald, Impact, sans-serif; font-size: clamp(4.6rem, 10vw, 9rem); font-weight: 600; line-height: 1.06; letter-spacing: -.04em; text-transform: uppercase; }
 .hero h1 em { color: var(--terracotta); font-style: normal; }
 .heroNote { width: min(315px, 30vw); margin-bottom: 82px; padding-top: 17px; border-top: 1px solid rgba(255,255,255,.32); }
 .heroNote span { color: var(--terracotta); font-family: Oswald, Impact, sans-serif; font-size: 20px; }
@@ -15,7 +15,8 @@
 .catalogHeading h2, .bookingBand h2 { margin: 0; font-family: Oswald, Impact, sans-serif; font-size: clamp(3rem, 5.5vw, 5rem); font-weight: 600; line-height: .96; letter-spacing: -.025em; text-transform: uppercase; }
 .catalogIntro { margin: 0 0 7px; color: var(--muted); font-size: 14px; line-height: 1.85; }
 .categoryBar { display: flex; flex-wrap: wrap; gap: 8px; margin: 68px 0 22px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
-.categoryBar span { padding: 8px 15px; color: var(--muted); border: 1px solid transparent; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.categoryBar button { padding: 8px 15px; color: var(--muted); border: 1px solid transparent; background: transparent; font: 800 10px Inter, Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.categoryBar button small { margin-left: 4px; color: #a79b91; font-size: 8px; }
 .categoryBar .categoryActive { border-color: var(--terracotta); color: var(--terracotta); }
 .serviceGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .serviceCard { min-height: 300px; padding: 28px 30px 25px; display: flex; flex-direction: column; border: 1px solid var(--line); background: white; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
@@ -32,6 +33,8 @@
 .cardBottom strong { color: var(--ink); font-size: 13px; }
 .cardLink { align-self: flex-end; margin-top: -23px; color: var(--terracotta); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .cardLink span { margin-left: 7px; font-size: 17px; vertical-align: -2px; }
+.catalogState { min-height: 180px; display: grid; place-items: center; padding: 30px; border: 1px dashed var(--line); color: var(--muted); font-size: 13px; text-align: center; }
+.catalogError { color: var(--terracotta); background: #fff8f5; }
 .bookingBand { padding: 100px max(24px, calc((100vw - 1180px) / 2)); display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 80px; color: white; background: var(--terracotta); }
 .bookingBand .eyebrow { color: #f5d69a; }
 .bookingCopy { padding: 32px 0 0 38px; border-left: 1px solid rgba(255,255,255,.38); }
@@ -53,14 +56,14 @@
   .hero { padding-top: 52px; }
   .heroInner, .heroRule, .catalogInner { width: min(100% - 28px, 1180px); }
   .heroInner { min-height: 0; display: block; }
-  .hero h1 { margin-bottom: 48px; font-size: clamp(3.7rem, 16vw, 5rem); line-height: .94; }
+  .hero h1 { margin-bottom: 48px; font-size: clamp(3.7rem, 16vw, 5rem); line-height: 1.08; }
   .heroNote { width: 100%; margin: 0 0 43px; }
   .heroNote p { max-width: 310px; }
   .catalog { padding: 68px 0; }
   .catalogHeading h2, .bookingBand h2 { font-size: clamp(2.65rem, 12vw, 3.3rem); line-height: 1.04; }
   .categoryBar { margin-top: 42px; overflow-x: auto; flex-wrap: nowrap; margin-right: -14px; padding-right: 14px; scrollbar-width: none; }
   .categoryBar::-webkit-scrollbar { display: none; }
-  .categoryBar span { flex: 0 0 auto; }
+  .categoryBar button { flex: 0 0 auto; }
   .serviceGrid { grid-template-columns: 1fr; gap: 12px; }
   .serviceCard { min-height: 275px; padding: 24px 22px 21px; }
   .cardBody { padding-top: 27px; }

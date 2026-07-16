@@ -16,6 +16,7 @@ type BarberOption = AvailableBarber & { id: string; any?: boolean };
 export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<BookingService[]>([]);
+  const [preferredServiceId, setPreferredServiceId] = useState("");
   const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [barbers, setBarbers] = useState<BarberOption[]>([]);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
@@ -60,6 +61,8 @@ export default function BookingPage() {
       .then((catalog) => {
         if (!active) return;
         setServices(catalog.services);
+        const requestedServiceId = new URLSearchParams(window.location.search).get("service") || "";
+        if (catalog.services.some((service) => service.id === requestedServiceId)) setPreferredServiceId(requestedServiceId);
         setError("");
       })
       .catch((requestError: Error) => active && setError(requestError.message))
@@ -116,6 +119,14 @@ export default function BookingPage() {
     setCustomerLookupError("");
     setName("");
     setReferralCode("");
+  }
+
+  function nextStep() {
+    setError("");
+    if (step === 1 && preferredServiceId && services.some((service) => service.id === preferredServiceId)) {
+      setServiceIds([preferredServiceId]);
+    }
+    setStep((current) => current + 1);
   }
 
   async function checkCustomer() {
@@ -308,7 +319,7 @@ export default function BookingPage() {
             <div className={styles.actions}>
               {step > 1 && <button className={styles.secondaryButton} type="button" disabled={submitting} onClick={() => { setError(""); setStep(step - 1); }}>Quay lại</button>}
               {step < 4 ? (
-                <button className={styles.primaryButton} type="button" disabled={!canContinue || catalogLoading || slotsLoading || barbersLoading} onClick={() => { setError(""); setStep(step + 1); }}>Tiếp tục <span>→</span></button>
+                <button className={styles.primaryButton} type="button" disabled={!canContinue || catalogLoading || slotsLoading || barbersLoading} onClick={nextStep}>Tiếp tục <span>→</span></button>
               ) : (
                 <button className={styles.primaryButton} type="submit" disabled={!canContinue || submitting}>{submitting ? "Đang đặt lịch..." : "Xác nhận đặt lịch"} <span>→</span></button>
               )}

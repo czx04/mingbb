@@ -8,6 +8,28 @@ export type BookingService = {
   price: number;
 };
 
+export type ServiceCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+};
+
+export type PublicService = BookingService & {
+  slug: string;
+  shortDescription: string;
+  sortOrder: number;
+  category: ServiceCategory | null;
+  priceDisplayMode: "fixed" | "from" | "contact";
+  featured: boolean;
+  onlineBookable: boolean;
+};
+
+export type PublicServiceCatalog = {
+  categories: ServiceCategory[];
+  services: PublicService[];
+};
+
 export type BookingCatalog = {
   location: {
     id: string;
@@ -88,6 +110,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const bookingApi = {
   catalog: () => request<BookingCatalog>("/booking/catalog"),
+  publicServices: () => request<PublicServiceCatalog>("/booking/services"),
   availability: (date: string) => request<{ date: string; slots: BookingSlot[] }>(`/booking/availability?date=${encodeURIComponent(date)}`),
   barbers: (date: string, time: string, serviceIds: string[]) => {
     const query = new URLSearchParams({ date, time, serviceIds: serviceIds.join(",") });

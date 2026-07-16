@@ -6,6 +6,7 @@ import {
   CreateAppointmentDto,
   ReplaceShiftsDto,
   ReviewVisibilityDto,
+  ServiceCategoryInputDto,
   ServiceInputDto,
   UpdateAppointmentStatusDto
 } from "./admin.dto";
@@ -33,6 +34,19 @@ export class AdminController {
   @Delete("services/:id")
   archiveService(@Param("id") id: string) {
     return this.adminService.archiveService(id);
+  }
+
+  @Post("service-categories")
+  createServiceCategory(@Body() input: ServiceCategoryInputDto) {
+    return this.adminService.createServiceCategory(input);
+  }
+
+  @Put("service-categories/:id")
+  updateServiceCategory(
+    @Param("id") id: string,
+    @Body() input: ServiceCategoryInputDto,
+  ) {
+    return this.adminService.updateServiceCategory(id, input);
   }
 
   @Post("barbers")

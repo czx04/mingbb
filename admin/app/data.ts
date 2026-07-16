@@ -1,9 +1,9 @@
 import type { Appointment, Barber, ScheduleMap, Service, Shift } from "./types";
 
 export const servicesSeed: Service[] = [
-  { id: "cut", name: "Cắt tóc", duration: 45, price: 120000, active: true, barberIds: ["minh", "khoa"] },
-  { id: "shave", name: "Cạo mặt", duration: 30, price: 80000, active: true, barberIds: ["minh", "khoa"] },
-  { id: "combo", name: "Combo chăm sóc", duration: 75, price: 190000, active: true, barberIds: ["minh", "khoa"] }
+  { id: "cut", name: "Cắt tóc", categoryId: "haircut", shortDescription: "Tư vấn và tạo kiểu.", description: "Cắt tóc nam.", duration: 45, price: 120000, priceDisplayMode: "fixed", sortOrder: 1, active: true, published: true, featured: true, onlineBookable: true, barberIds: ["minh", "khoa"] },
+  { id: "shave", name: "Cạo mặt", categoryId: "beard", shortDescription: "Khăn nóng và cạo sạch.", description: "Cạo mặt thư giãn.", duration: 30, price: 80000, priceDisplayMode: "fixed", sortOrder: 2, active: true, published: true, featured: true, onlineBookable: true, barberIds: ["minh", "khoa"] },
+  { id: "combo", name: "Combo chăm sóc", categoryId: "combo", shortDescription: "Trải nghiệm trọn vẹn.", description: "Combo chăm sóc.", duration: 75, price: 190000, priceDisplayMode: "fixed", sortOrder: 3, active: true, published: true, featured: true, onlineBookable: true, barberIds: ["minh", "khoa"] }
 ];
 
 export const barbersSeed: Barber[] = [

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { adminApi } from "./api";
 import { addDays, availableRanges, minutes, toKey } from "./data";
-import type { Appointment, AppointmentStatus, Barber, Review, ScheduleMap, Service, Shift } from "./types";
+import type { Appointment, AppointmentStatus, Barber, Review, ScheduleMap, Service, ServiceCategory, Shift } from "./types";
 
 type View = "schedule" | "appointments" | "reviews" | "catalog";
 type IconName = "calendar" | "appointments" | "reviews" | "scissors" | "bell" | "plus" | "settings" | "more" | "clock" | "chevron" | "close" | "menu" | "copy" | "trash" | "edit" | "check" | "user" | "phone" | "briefcase";
@@ -20,6 +20,7 @@ export default function AdminPage() {
   const today = useMemo(() => new Date(), []);
   const [view, setView] = useState<View>("schedule");
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [schedules, setSchedules] = useState<ScheduleMap>({});
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -32,6 +33,7 @@ export default function AdminPage() {
   useEffect(() => {
     adminApi.bootstrap().then((data) => {
       setServices(data.services);
+      setCategories(data.categories);
       setBarbers(data.barbers);
       setSchedules(data.schedules);
       setAppointments(data.appointments);
@@ -81,7 +83,7 @@ export default function AdminPage() {
         {view === "schedule" && <ScheduleView barbers={barbers} schedules={schedules} appointments={appointments} setSchedules={setSchedules} notify={notify} />}
         {view === "appointments" && <AppointmentsView appointments={appointments} setAppointments={setAppointments} schedules={schedules} services={services} barbers={barbers} notify={notify} />}
         {view === "reviews" && <ReviewsView reviews={reviews} setReviews={setReviews} notify={notify} />}
-        {view === "catalog" && <CatalogView services={services} setServices={setServices} barbers={barbers} setBarbers={setBarbers} notify={notify} />}
+        {view === "catalog" && <CatalogView services={services} setServices={setServices} categories={categories} setCategories={setCategories} barbers={barbers} setBarbers={setBarbers} notify={notify} />}
         </>}
       </div>
     </main>
@@ -377,18 +379,48 @@ function ReviewsView({ reviews, setReviews, notify }: { reviews: Review[]; setRe
   </>;
 }
 
-function CatalogView({ services, setServices, barbers, setBarbers, notify }: { services: Service[]; setServices: React.Dispatch<React.SetStateAction<Service[]>>; barbers: Barber[]; setBarbers: React.Dispatch<React.SetStateAction<Barber[]>>; notify: (message: string) => void }) {
-  const [tab, setTab] = useState<"services" | "barbers">("services");
+function CatalogView({ services, setServices, categories, setCategories, barbers, setBarbers, notify }: { services: Service[]; setServices: React.Dispatch<React.SetStateAction<Service[]>>; categories: ServiceCategory[]; setCategories: React.Dispatch<React.SetStateAction<ServiceCategory[]>>; barbers: Barber[]; setBarbers: React.Dispatch<React.SetStateAction<Barber[]>>; notify: (message: string) => void }) {
+  const [tab, setTab] = useState<"services" | "categories" | "barbers">("services");
   const [addingService, setAddingService] = useState(false);
+  const [addingCategory, setAddingCategory] = useState(false);
   const [addingBarber, setAddingBarber] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
+
+  const categoryName = (id: string) => categories.find((category) => category.id === id)?.name || "Chưa phân loại";
+  const nextCategoryOrder = () => categories.reduce((max, category) => Math.max(max, category.sortOrder), 0) + 1;
+  const nextServiceOrder = () => services.reduce((max, service) => Math.max(max, service.sortOrder), 0) + 1;
+
+  function readServiceForm(data: FormData, current?: Service): Omit<Service, "id"> {
+    return {
+      name: String(data.get("name") || "").trim(),
+      categoryId: String(data.get("categoryId") || ""),
+      shortDescription: String(data.get("shortDescription") || "").trim(),
+      description: String(data.get("description") || "").trim(),
+      duration: Number(data.get("duration")),
+      price: Number(data.get("price")),
+      priceDisplayMode: String(data.get("priceDisplayMode") || "fixed") as Service["priceDisplayMode"],
+      sortOrder: Number(data.get("sortOrder")),
+      active: current?.active ?? true,
+      published: data.get("published") === "on",
+      featured: data.get("featured") === "on",
+      onlineBookable: data.get("onlineBookable") === "on",
+      barberIds: data.getAll("barberIds").map(String)
+    };
+  }
 
   async function addService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
-    const draft = { name: String(data.get("name")), duration: Number(data.get("duration")), price: Number(data.get("price")), active: true, barberIds: barbers.filter((item) => item.active).map((item) => item.id) };
+    const draft = readServiceForm(data);
     try { const created = await adminApi.createService(draft); setServices((current) => [...current, { ...draft, id: created.id }]); setAddingService(false); notify("Đã thêm dịch vụ"); }
     catch (error) { notify(error instanceof Error ? error.message : "Không thể thêm dịch vụ"); }
+  }
+  async function addCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const data = new FormData(event.currentTarget);
+    const draft = { name: String(data.get("name") || "").trim(), sortOrder: Number(data.get("sortOrder")), active: true };
+    try { const created = await adminApi.createServiceCategory(draft); setCategories((current) => [...current, { ...draft, id: created.id, slug: draft.name.toLowerCase().replace(/\s+/g, "-") }]); setAddingCategory(false); notify("Đã thêm danh mục"); }
+    catch (error) { notify(error instanceof Error ? error.message : "Không thể thêm danh mục"); }
   }
   async function addBarber(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget); const name = String(data.get("name"));
@@ -398,9 +430,15 @@ function CatalogView({ services, setServices, barbers, setBarbers, notify }: { s
   }
   async function editService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!editingService) return; const data = new FormData(event.currentTarget);
-    const next = { ...editingService, name: String(data.get("name")), duration: Number(data.get("duration")), price: Number(data.get("price")) };
+    const next = { ...editingService, ...readServiceForm(data, editingService) };
     try { await adminApi.updateService(next); setServices((current) => current.map((item) => item.id === next.id ? next : item)); setEditingService(null); notify("Đã sửa dịch vụ"); }
     catch (error) { notify(error instanceof Error ? error.message : "Không thể sửa dịch vụ"); }
+  }
+  async function editCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!editingCategory) return; const data = new FormData(event.currentTarget);
+    const next = { ...editingCategory, name: String(data.get("name") || "").trim(), sortOrder: Number(data.get("sortOrder")), active: data.get("active") === "on" };
+    try { await adminApi.updateServiceCategory(next); setCategories((current) => current.map((item) => item.id === next.id ? next : item)); setEditingCategory(null); notify("Đã cập nhật danh mục"); }
+    catch (error) { notify(error instanceof Error ? error.message : "Không thể cập nhật danh mục"); }
   }
   async function editBarber(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!editingBarber) return; const data = new FormData(event.currentTarget); const name = String(data.get("name"));
@@ -434,14 +472,31 @@ function CatalogView({ services, setServices, barbers, setBarbers, notify }: { s
   }
 
   return <>
-    <PageHeading eyebrow="CẤU HÌNH" title="Dịch vụ & Barber" description="Thời lượng dịch vụ kết hợp với ca làm barber để tạo khoảng giờ đặt lịch." action={<button className="primary-button" onClick={() => tab === "services" ? setAddingService(true) : setAddingBarber(true)}><Icon name="plus" /> {tab === "services" ? "Thêm dịch vụ" : "Thêm barber"}</button>} />
-    <div className="catalog-tabs"><button className={tab === "services" ? "active" : ""} onClick={() => setTab("services")}><Icon name="scissors" /> Dịch vụ <b>{services.length}</b></button><button className={tab === "barbers" ? "active" : ""} onClick={() => setTab("barbers")}><Icon name="user" /> Barber <b>{barbers.length}</b></button></div>
-    {tab === "services" ? <div className="catalog-grid">{services.map((service) => <article className={`panel catalog-card ${!service.active ? "catalog-inactive" : ""}`} key={service.id}><div className="catalog-card-head"><div className="service-symbol"><Icon name="scissors" /></div><label className="day-switch"><input type="checkbox" checked={service.active} onChange={() => saveService({ ...service, active: !service.active }, "Đã cập nhật dịch vụ")} /><i /></label></div><p>DỊCH VỤ</p><h3>{service.name}</h3><div className="catalog-meta"><span><Icon name="clock" /> {service.duration} phút</span><strong>{money.format(service.price)}</strong></div><div className="skill-list"><span>BARBER THỰC HIỆN</span><div>{barbers.map((barber) => <button className={service.barberIds.includes(barber.id) ? "selected" : ""} onClick={() => toggleSkill(service.id, barber.id)} key={barber.id}><i>{barber.initials}</i>{barber.name}<b>{service.barberIds.includes(barber.id) ? "✓" : "+"}</b></button>)}</div></div><div className="catalog-actions"><button onClick={() => setEditingService(service)}><Icon name="edit" /> Sửa</button><button onClick={() => deleteService(service)}><Icon name="trash" /> Xóa</button></div></article>)}</div> : <div className="catalog-grid barber-grid-admin">{barbers.map((barber) => <article className={`panel barber-card-admin ${!barber.active ? "catalog-inactive" : ""}`} key={barber.id}><div className={`big-avatar avatar-${barber.tone}`}>{barber.initials}</div><div><p>BARBER</p><h3>{barber.name}</h3><span>{barber.detail}</span></div><label className="day-switch"><input type="checkbox" checked={barber.active} onChange={() => saveBarber({ ...barber, active: !barber.active })} /><i /></label><div className="barber-skills"><span>Dịch vụ có thể thực hiện</span><strong>{services.filter((service) => service.barberIds.includes(barber.id)).map((service) => service.name).join(" · ") || "Chưa có"}</strong></div><div className="catalog-actions barber-catalog-actions"><button onClick={() => setEditingBarber(barber)}><Icon name="edit" /> Sửa</button><button onClick={() => deleteBarber(barber)}><Icon name="trash" /> Xóa</button></div></article>)}</div>}
-    {addingService && <Modal onClose={() => setAddingService(false)} eyebrow="DỊCH VỤ MỚI" title="Thêm dịch vụ" subtitle="Thời lượng quyết định độ dài khoảng đặt lịch."><form onSubmit={addService}><label>Tên dịch vụ<input name="name" required placeholder="Ví dụ: Uốn tóc" /></label><div className="form-grid"><label>Thời lượng (phút)<input name="duration" type="number" min="15" step="15" defaultValue="45" required /></label><label>Giá dịch vụ<input name="price" type="number" min="0" step="10000" defaultValue="120000" required /></label></div><ModalActions onClose={() => setAddingService(false)} submit="Thêm dịch vụ" /></form></Modal>}
+    <PageHeading eyebrow="CẤU HÌNH" title="Dịch vụ & Barber" description="Quản lý danh mục, nội dung hiển thị, giá và barber thực hiện dịch vụ." action={<button className="primary-button" onClick={() => tab === "services" ? setAddingService(true) : tab === "categories" ? setAddingCategory(true) : setAddingBarber(true)}><Icon name="plus" /> {tab === "services" ? "Thêm dịch vụ" : tab === "categories" ? "Thêm danh mục" : "Thêm barber"}</button>} />
+    <div className="catalog-tabs"><button className={tab === "services" ? "active" : ""} onClick={() => setTab("services")}><Icon name="scissors" /> Dịch vụ <b>{services.length}</b></button><button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}><Icon name="settings" /> Danh mục <b>{categories.length}</b></button><button className={tab === "barbers" ? "active" : ""} onClick={() => setTab("barbers")}><Icon name="user" /> Barber <b>{barbers.length}</b></button></div>
+    {tab === "services" ? <div className="catalog-grid">{services.map((service) => <article className={`panel catalog-card ${!service.active || !service.published ? "catalog-inactive" : ""}`} key={service.id}><div className="catalog-card-head"><div className="service-symbol"><Icon name="scissors" /></div><label className="day-switch"><input type="checkbox" checked={service.active} onChange={() => saveService({ ...service, active: !service.active }, "Đã cập nhật trạng thái")} /><i /></label></div><p>{categoryName(service.categoryId).toUpperCase()}</p><h3>{service.name}</h3><div className="catalog-badges"><span>{service.published ? "Hiện website" : "Ẩn website"}</span><span>{service.featured ? "Nổi bật" : "Không nổi bật"}</span><span>{service.onlineBookable ? "Đặt online" : "Liên hệ"}</span></div><div className="catalog-meta"><span><Icon name="clock" /> {service.duration} phút</span><strong>{service.priceDisplayMode === "contact" ? "Liên hệ" : service.priceDisplayMode === "from" ? `Từ ${money.format(service.price)}` : money.format(service.price)}</strong></div><p className="catalog-description">{service.shortDescription || "Chưa có mô tả ngắn"}</p><div className="skill-list"><span>BARBER THỰC HIỆN</span><div>{barbers.map((barber) => <button type="button" className={service.barberIds.includes(barber.id) ? "selected" : ""} onClick={() => toggleSkill(service.id, barber.id)} key={barber.id}><i>{barber.initials}</i>{barber.name}<b>{service.barberIds.includes(barber.id) ? "✓" : "+"}</b></button>)}</div></div><div className="catalog-actions"><button type="button" onClick={() => setEditingService(service)}><Icon name="edit" /> Sửa</button><button type="button" onClick={() => deleteService(service)}><Icon name="trash" /> Ẩn</button></div></article>)}</div> : tab === "categories" ? <div className="catalog-grid category-admin-grid">{categories.map((category) => <article className={`panel category-admin-card ${!category.active ? "catalog-inactive" : ""}`} key={category.id}><div className="category-order">{String(category.sortOrder).padStart(2, "0")}</div><div><p>DANH MỤC</p><h3>{category.name}</h3><span>{services.filter((service) => service.categoryId === category.id).length} dịch vụ</span></div><label className="day-switch"><input type="checkbox" checked={category.active} onChange={() => { const next = { ...category, active: !category.active }; adminApi.updateServiceCategory(next).then(() => { setCategories((current) => current.map((item) => item.id === next.id ? next : item)); notify("Đã cập nhật danh mục"); }).catch((error) => notify(error instanceof Error ? error.message : "Không thể cập nhật danh mục")); }} /><i /></label><div className="catalog-actions category-actions"><button type="button" onClick={() => setEditingCategory(category)}><Icon name="edit" /> Sửa</button></div></article>)}</div> : <div className="catalog-grid barber-grid-admin">{barbers.map((barber) => <article className={`panel barber-card-admin ${!barber.active ? "catalog-inactive" : ""}`} key={barber.id}><div className={`big-avatar avatar-${barber.tone}`}>{barber.initials}</div><div><p>BARBER</p><h3>{barber.name}</h3><span>{barber.detail}</span></div><label className="day-switch"><input type="checkbox" checked={barber.active} onChange={() => saveBarber({ ...barber, active: !barber.active })} /><i /></label><div className="barber-skills"><span>Dịch vụ có thể thực hiện</span><strong>{services.filter((service) => service.barberIds.includes(barber.id)).map((service) => service.name).join(" · ") || "Chưa có"}</strong></div><div className="catalog-actions barber-catalog-actions"><button type="button" onClick={() => setEditingBarber(barber)}><Icon name="edit" /> Sửa</button><button type="button" onClick={() => deleteBarber(barber)}><Icon name="trash" /> Xóa</button></div></article>)}</div>}
+    {addingService && <Modal onClose={() => setAddingService(false)} eyebrow="DỊCH VỤ MỚI" title="Thêm dịch vụ" subtitle="Chọn danh mục để dịch vụ đúng nhóm trên website."><ServiceForm categories={categories} defaultSortOrder={nextServiceOrder()} onSubmit={addService} onClose={() => setAddingService(false)} barbers={barbers} /></Modal>}
+    {addingCategory && <Modal onClose={() => setAddingCategory(false)} eyebrow="DANH MỤC MỚI" title="Thêm danh mục" subtitle="Ví dụ: Cắt tóc, Uốn tóc, Gội & chăm sóc."><form onSubmit={addCategory}><label>Tên danh mục<input name="name" required placeholder="Ví dụ: Uốn tóc" /></label><label>Thứ tự hiển thị<input name="sortOrder" type="number" min="0" defaultValue={nextCategoryOrder()} required /></label><ModalActions onClose={() => setAddingCategory(false)} submit="Thêm danh mục" /></form></Modal>}
     {addingBarber && <Modal onClose={() => setAddingBarber(false)} eyebrow="BARBER MỚI" title="Thêm barber" subtitle="Sau khi thêm, hãy thiết lập ca làm việc cho barber."><form onSubmit={addBarber}><label>Tên barber<input name="name" required placeholder="Ví dụ: Hoàng" /></label><label>Mô tả ngắn<input name="detail" required placeholder="Chuyên fade & styling" /></label><ModalActions onClose={() => setAddingBarber(false)} submit="Thêm barber" /></form></Modal>}
-    {editingService && <Modal onClose={() => setEditingService(null)} eyebrow="CHỈNH SỬA" title="Sửa dịch vụ" subtitle="Thay đổi chỉ áp dụng cho các lịch đặt mới."><form onSubmit={editService}><label>Tên dịch vụ<input name="name" required defaultValue={editingService.name} /></label><div className="form-grid"><label>Thời lượng (phút)<input name="duration" type="number" min="15" step="15" defaultValue={editingService.duration} required /></label><label>Giá dịch vụ<input name="price" type="number" min="0" step="10000" defaultValue={editingService.price} required /></label></div><ModalActions onClose={() => setEditingService(null)} submit="Lưu thay đổi" /></form></Modal>}
+    {editingService && <Modal onClose={() => setEditingService(null)} eyebrow="CHỈNH SỬA" title="Sửa dịch vụ" subtitle="Cập nhật nội dung hiển thị và khả năng đặt lịch."><ServiceForm categories={categories} service={editingService} onSubmit={editService} onClose={() => setEditingService(null)} barbers={barbers} /></Modal>}
+    {editingCategory && <Modal onClose={() => setEditingCategory(null)} eyebrow="CHỈNH SỬA" title="Sửa danh mục" subtitle="Đổi tên hoặc thứ tự hiển thị danh mục."><form onSubmit={editCategory}><label>Tên danh mục<input name="name" required defaultValue={editingCategory.name} /></label><label>Thứ tự hiển thị<input name="sortOrder" type="number" min="0" defaultValue={editingCategory.sortOrder} required /></label><label className="check-field"><input name="active" type="checkbox" defaultChecked={editingCategory.active} /> Hiển thị danh mục</label><ModalActions onClose={() => setEditingCategory(null)} submit="Lưu thay đổi" /></form></Modal>}
     {editingBarber && <Modal onClose={() => setEditingBarber(null)} eyebrow="CHỈNH SỬA" title="Sửa barber" subtitle="Cập nhật thông tin hiển thị của barber."><form onSubmit={editBarber}><label>Tên barber<input name="name" required defaultValue={editingBarber.name} /></label><div className="form-grid"><label>Tên viết tắt<input name="initials" required maxLength={3} defaultValue={editingBarber.initials} /></label><label>Mô tả ngắn<input name="detail" required defaultValue={editingBarber.detail} /></label></div><ModalActions onClose={() => setEditingBarber(null)} submit="Lưu thay đổi" /></form></Modal>}
   </>;
+}
+
+function ServiceForm({ categories, service, defaultSortOrder = 0, barbers, onSubmit, onClose }: { categories: ServiceCategory[]; service?: Service; defaultSortOrder?: number; barbers: Barber[]; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onClose: () => void }) {
+  return <form onSubmit={onSubmit}>
+    <label>Tên dịch vụ<input name="name" required defaultValue={service?.name} placeholder="Ví dụ: Uốn texture" /></label>
+    <div className="form-grid"><label>Danh mục<select name="categoryId" defaultValue={service?.categoryId || categories.find((category) => category.active)?.id} required>{categories.filter((category) => category.active).map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label><label>Thứ tự<input name="sortOrder" type="number" min="0" defaultValue={service?.sortOrder ?? defaultSortOrder} required /></label></div>
+    <div className="form-grid"><label>Thời lượng (phút)<input name="duration" type="number" min="5" max="720" step="5" defaultValue={service?.duration ?? 45} required /></label><label>Giá dịch vụ<input name="price" type="number" min="0" step="10000" defaultValue={service?.price ?? 120000} required /></label></div>
+    <label>Hiển thị giá<select name="priceDisplayMode" defaultValue={service?.priceDisplayMode || "fixed"}><option value="fixed">Giá cố định</option><option value="from">Giá từ</option><option value="contact">Liên hệ</option></select></label>
+    <label>Mô tả ngắn<input name="shortDescription" defaultValue={service?.shortDescription} placeholder="Hiển thị trên thẻ dịch vụ" required /></label>
+    <label>Mô tả đầy đủ<textarea name="description" defaultValue={service?.description} placeholder="Mô tả chi tiết quy trình, trải nghiệm..." required /></label>
+    <fieldset className="barber-check-field"><legend>Barber thực hiện</legend><div>{barbers.filter((barber) => barber.active).map((barber) => <label className="check-field" key={barber.id}><input name="barberIds" type="checkbox" value={barber.id} defaultChecked={service ? service.barberIds.includes(barber.id) : true} /> {barber.name}</label>)}</div></fieldset>
+    <div className="check-grid"><label className="check-field"><input name="published" type="checkbox" defaultChecked={service?.published ?? true} /> Hiện trên website</label><label className="check-field"><input name="featured" type="checkbox" defaultChecked={service?.featured ?? false} /> Nổi bật trang chủ</label><label className="check-field"><input name="onlineBookable" type="checkbox" defaultChecked={service?.onlineBookable ?? true} /> Cho đặt lịch online</label></div>
+    <div className="service-form-note">Chỉ những barber được chọn mới nhận được lịch cho dịch vụ này.</div>
+    <ModalActions onClose={onClose} submit={service ? "Lưu thay đổi" : "Thêm dịch vụ"} />
+  </form>;
 }
 
 function NavButton({ active, icon, label, badge, onClick }: { active: boolean; icon: IconName; label: string; badge?: string; onClick: () => void }) { return <button className={active ? "active" : ""} onClick={onClick}><Icon name={icon} /><span>{label}</span>{badge && badge !== "0" && <b>{badge}</b>}</button>; }

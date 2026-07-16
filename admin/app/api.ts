@@ -1,9 +1,10 @@
-import type { Appointment, Barber, Review, ScheduleMap, Service, Shift } from "./types";
+import type { Appointment, Barber, Review, ScheduleMap, Service, ServiceCategory, Shift } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 export type BootstrapData = {
   locationId: string;
+  categories: ServiceCategory[];
   services: Service[];
   barbers: Barber[];
   schedules: ScheduleMap;
@@ -29,6 +30,8 @@ export const adminApi = {
   createService: (service: Omit<Service, "id">) => request<{ id: string }>("/admin/services", { method: "POST", body: JSON.stringify(service) }),
   updateService: (service: Service) => request<{ ok: true }>(`/admin/services/${service.id}`, { method: "PUT", body: JSON.stringify(service) }),
   deleteService: (id: string) => request<{ ok: true }>(`/admin/services/${id}`, { method: "DELETE" }),
+  createServiceCategory: (category: Omit<ServiceCategory, "id" | "slug">) => request<{ id: string }>("/admin/service-categories", { method: "POST", body: JSON.stringify(category) }),
+  updateServiceCategory: (category: ServiceCategory) => request<{ ok: true }>(`/admin/service-categories/${category.id}`, { method: "PUT", body: JSON.stringify(category) }),
   createBarber: (barber: Omit<Barber, "id">) => request<{ id: string }>("/admin/barbers", { method: "POST", body: JSON.stringify({ ...barber, color: barber.tone }) }),
   updateBarber: (barber: Barber) => request<{ ok: true }>(`/admin/barbers/${barber.id}`, { method: "PUT", body: JSON.stringify({ ...barber, color: barber.tone }) }),
   deleteBarber: (id: string) => request<{ ok: true }>(`/admin/barbers/${id}`, { method: "DELETE" }),

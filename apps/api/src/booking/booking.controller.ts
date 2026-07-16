@@ -18,6 +18,11 @@ export class BookingController {
     return this.bookingService.catalog();
   }
 
+  @Get("services")
+  publicServices() {
+    return this.bookingService.publicServices();
+  }
+
   @Get("availability")
   availability(@Query() query: AvailabilityQueryDto) {
     return this.bookingService.availability(query.date);

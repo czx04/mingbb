@@ -13,6 +13,7 @@ import {
   BarberInputDto,
   CreateAppointmentDto,
   ReplaceShiftsDto,
+  ServiceCategoryInputDto,
   ServiceInputDto,
   UpdateAppointmentStatusDto,
 } from "./admin.dto";
@@ -34,6 +35,8 @@ export class AdminService {
   async bootstrap() {
     const [
       servicesResult,
+      categoriesResult,
+      serviceLocationsResult,
       barbersResult,
       skillsResult,
       shiftsResult,
@@ -45,6 +48,15 @@ export class AdminService {
         .select("*")
         .is("archived_at", null)
         .order("sort_order"),
+      this.supabase
+        .from("service_categories")
+        .select("id,name,slug,sort_order,active")
+        .is("archived_at", null)
+        .order("sort_order"),
+      this.supabase
+        .from("service_locations")
+        .select("service_id,price_override,duration_override,active")
+        .eq("location_id", LOCATION_ID),
       this.supabase
         .from("barbers")
         .select("*")
@@ -75,6 +87,8 @@ export class AdminService {
 
     [
       servicesResult,
+      categoriesResult,
+      serviceLocationsResult,
       barbersResult,
       skillsResult,
       shiftsResult,
@@ -85,17 +99,43 @@ export class AdminService {
     });
 
     const skills = (skillsResult.data ?? []) as DatabaseRow[];
-    const services = ((servicesResult.data ?? []) as DatabaseRow[]).map(
+    const locations = new Map(
+      ((serviceLocationsResult.data ?? []) as DatabaseRow[]).map((row) => [
+        String(row.service_id),
+        row,
+      ]),
+    );
+    const categories = ((categoriesResult.data ?? []) as DatabaseRow[]).map(
       (row) => ({
         id: row.id,
         name: row.name,
-        duration: row.duration_minutes,
-        price: row.price_amount,
+        slug: row.slug,
+        sortOrder: row.sort_order,
         active: row.active,
-        barberIds: skills
-          .filter((skill) => skill.service_id === row.id && skill.active)
-          .map((skill) => skill.barber_id),
       }),
+    );
+    const services = ((servicesResult.data ?? []) as DatabaseRow[]).map(
+      (row) => {
+        const location = locations.get(String(row.id));
+        return {
+          id: row.id,
+          name: row.name,
+          categoryId: row.category_id,
+          shortDescription: row.short_description ?? "",
+          description: row.description ?? "",
+          duration: location?.duration_override ?? row.duration_minutes,
+          price: location?.price_override ?? row.price_amount,
+          priceDisplayMode: row.price_display_mode ?? "fixed",
+          sortOrder: row.sort_order,
+          active: row.active,
+          published: row.published ?? true,
+          featured: row.featured ?? false,
+          onlineBookable: row.online_bookable ?? true,
+          barberIds: skills
+            .filter((skill) => skill.service_id === row.id && skill.active)
+            .map((skill) => skill.barber_id),
+        };
+      },
     );
     const barbers = ((barbersResult.data ?? []) as DatabaseRow[]).map(
       (row) => ({
@@ -158,6 +198,7 @@ export class AdminService {
 
     return {
       locationId: LOCATION_ID,
+      categories,
       services,
       barbers,
       schedules,
@@ -180,6 +221,8 @@ export class AdminService {
   }
 
   async createService(input: ServiceInputDto) {
+    await this.assertCategory(input.categoryId);
+    if (input.featured) await this.assertFeaturedCapacity();
     const slug = `${slugify(input.name)}-${Date.now().toString(36)}`;
     const { data, error } = await this.supabase
       .from("services")
@@ -188,28 +231,88 @@ export class AdminService {
         slug,
         duration_minutes: input.duration,
         price_amount: input.price,
+        category_id: input.categoryId,
+        short_description: input.shortDescription,
+        description: input.description,
+        sort_order: input.sortOrder,
         active: input.active,
+        published: input.published,
+        featured: input.featured,
+        online_bookable: input.onlineBookable,
+        price_display_mode: input.priceDisplayMode,
       })
       .select("id")
       .single();
     if (error) throw new BadRequestException(error.message);
-    await this.syncServiceRelations(data.id as string, input.barberIds);
+    await this.syncServiceRelations(
+      data.id as string,
+      input.barberIds,
+      input.price,
+      input.duration,
+    );
     await this.invalidateCatalogAndResources();
     return { id: data.id };
   }
 
   async updateService(id: string, input: ServiceInputDto) {
+    await this.assertCategory(input.categoryId);
+    if (input.featured) await this.assertFeaturedCapacity(id);
     const { error } = await this.supabase
       .from("services")
       .update({
         name: input.name,
         duration_minutes: input.duration,
         price_amount: input.price,
+        category_id: input.categoryId,
+        short_description: input.shortDescription,
+        description: input.description,
+        sort_order: input.sortOrder,
         active: input.active,
+        published: input.published,
+        featured: input.featured,
+        online_bookable: input.onlineBookable,
+        price_display_mode: input.priceDisplayMode,
       })
       .eq("id", id);
     if (error) throw new BadRequestException(error.message);
-    await this.syncServiceRelations(id, input.barberIds);
+    await this.syncServiceRelations(
+      id,
+      input.barberIds,
+      input.price,
+      input.duration,
+    );
+    await this.invalidateCatalogAndResources();
+    return { ok: true };
+  }
+
+  async createServiceCategory(input: ServiceCategoryInputDto) {
+    const slug = `${slugify(input.name)}-${Date.now().toString(36)}`;
+    const { data, error } = await this.supabase
+      .from("service_categories")
+      .insert({
+        name: input.name,
+        slug,
+        sort_order: input.sortOrder,
+        active: input.active,
+      })
+      .select("id")
+      .single();
+    if (error) throw new BadRequestException(error.message);
+    await this.invalidateCatalogAndResources();
+    return { id: data.id };
+  }
+
+  async updateServiceCategory(id: string, input: ServiceCategoryInputDto) {
+    const { error } = await this.supabase
+      .from("service_categories")
+      .update({
+        name: input.name,
+        sort_order: input.sortOrder,
+        active: input.active,
+      })
+      .eq("id", id)
+      .is("archived_at", null);
+    if (error) throw new BadRequestException(error.message);
     await this.invalidateCatalogAndResources();
     return { ok: true };
   }
@@ -539,10 +642,46 @@ export class AdminService {
     await this.cache.bump(redisScopes.scheduleVersion(LOCATION_ID, date));
   }
 
-  private async syncServiceRelations(serviceId: string, barberIds: string[]) {
+  private async assertCategory(categoryId: string) {
+    const { data, error } = await this.supabase
+      .from("service_categories")
+      .select("id")
+      .eq("id", categoryId)
+      .eq("active", true)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    if (!data) throw new BadRequestException("Danh mục dịch vụ không hợp lệ");
+  }
+
+  private async assertFeaturedCapacity(excludeId?: string) {
+    let query = this.supabase
+      .from("services")
+      .select("id", { count: "exact", head: true })
+      .eq("featured", true)
+      .is("archived_at", null);
+    if (excludeId) query = query.neq("id", excludeId);
+    const { count, error } = await query;
+    if (error) throw new BadRequestException(error.message);
+    if ((count ?? 0) >= 4)
+      throw new BadRequestException("Trang chủ chỉ được chọn tối đa 4 dịch vụ nổi bật");
+  }
+
+  private async syncServiceRelations(
+    serviceId: string,
+    barberIds: string[],
+    price: number,
+    duration: number,
+  ) {
     const locationResult = await this.supabase
       .from("service_locations")
-      .upsert({ service_id: serviceId, location_id: LOCATION_ID });
+      .upsert({
+        service_id: serviceId,
+        location_id: LOCATION_ID,
+        active: true,
+        price_override: price,
+        duration_override: duration,
+      });
     if (locationResult.error)
       throw new BadRequestException(locationResult.error.message);
     const removal = await this.supabase

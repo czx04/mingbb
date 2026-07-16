@@ -3,8 +3,8 @@ import logo from "../assets/logo.png";
 import shopInterior from "../assets/shop-interior.png";
 import MobileBookingBar from "../components/MobileBookingBar";
 import ReviewsCarousel from "../components/ReviewsCarousel";
+import ServiceHighlights from "../components/ServiceHighlights";
 import SiteHeader from "../components/SiteHeader";
-import { featuredServices } from "../lib/services";
 
 export default function Home() {
   return (
@@ -62,17 +62,7 @@ export default function Home() {
             <div><p className="ref-eyebrow">Dịch vụ</p><h2>Chọn trải nghiệm<br />dành cho bạn.</h2></div>
             <p>Giá rõ ràng, thời gian chủ động. Bạn có thể chọn một hoặc kết hợp nhiều dịch vụ khi đặt lịch.</p>
           </div>
-          <div className="service-list">
-            {featuredServices.map((service) => (
-              <article className="service-item" key={service.name}>
-                <span>{service.index}</span>
-                <div><h3>{service.name}</h3><p>{service.description}</p></div>
-                <strong>{service.price}</strong>
-                <a href="/dat-lich" aria-label={`Đặt lịch ${service.name}`}>↗</a>
-              </article>
-            ))}
-          </div>
-          <div className="services-more"><a href="/dich-vu">Xem tất cả dịch vụ <span>→</span></a></div>
+          <ServiceHighlights />
         </div>
       </section>
 

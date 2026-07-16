@@ -1,10 +1,8 @@
 import Link from "next/link";
 import MobileBookingBar from "../../components/MobileBookingBar";
+import ServicesCatalog from "../../components/ServicesCatalog";
 import SiteHeader from "../../components/SiteHeader";
-import { services } from "../../lib/services";
 import styles from "./page.module.css";
-
-const categories = ["Tất cả", "Tóc", "Râu", "Thư giãn", "Combo"];
 
 export default function ServicesPage() {
   return (
@@ -23,7 +21,7 @@ export default function ServicesPage() {
             <h1>Chọn cách<br /><em>chăm sóc</em> bạn.</h1>
           </div>
           <div className={styles.heroNote}>
-            <span>01 — 08</span>
+            <span>MENU MING</span>
             <p>Mỗi dịch vụ tại MING đều bắt đầu bằng một cuộc trò chuyện ngắn để hiểu bạn cần gì và kết thúc bằng một diện mạo thật vừa vặn.</p>
           </div>
         </div>
@@ -40,29 +38,7 @@ export default function ServicesPage() {
             <p className={styles.catalogIntro}>Từ một đường cắt mới đến một buổi thư giãn trọn vẹn, bạn có thể chọn riêng từng dịch vụ hoặc kết hợp thành trải nghiệm của riêng mình.</p>
           </div>
 
-          <div className={styles.categoryBar} aria-label="Nhóm dịch vụ">
-            {categories.map((category, index) => <span className={index === 0 ? styles.categoryActive : ""} key={category}>{category}</span>)}
-          </div>
-
-          <div className={styles.serviceGrid}>
-            {services.map((service) => (
-              <article className={styles.serviceCard} key={service.name}>
-                <div className={styles.cardTop}>
-                  <span className={styles.cardIndex}>{service.index}</span>
-                  <span className={styles.cardCategory}>{service.category}</span>
-                </div>
-                <div className={styles.cardBody}>
-                  <h3>{service.name}</h3>
-                  <p>{service.details}</p>
-                </div>
-                <div className={styles.cardBottom}>
-                  <div><span>Thời lượng</span><strong>{service.duration}</strong></div>
-                  <div><span>{service.price === "Liên hệ" ? "Mức giá" : "Giá từ"}</span><strong>{service.price}</strong></div>
-                </div>
-                <Link className={styles.cardLink} href="/dat-lich" aria-label={`Đặt lịch ${service.name}`}>Đặt lịch <span>↗</span></Link>
-              </article>
-            ))}
-          </div>
+          <ServicesCatalog />
         </div>
       </section>
 

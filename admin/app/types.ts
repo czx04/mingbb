@@ -1,9 +1,25 @@
+export type ServiceCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  active: boolean;
+};
+
 export type Service = {
   id: string;
   name: string;
+  categoryId: string;
+  shortDescription: string;
+  description: string;
   duration: number;
   price: number;
+  priceDisplayMode: "fixed" | "from" | "contact";
+  sortOrder: number;
   active: boolean;
+  published: boolean;
+  featured: boolean;
+  onlineBookable: boolean;
   barberIds: string[];
 };
 

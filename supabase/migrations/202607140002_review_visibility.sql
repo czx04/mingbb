@@ -5,3 +5,4 @@ alter table public.customer_reviews
 
 create index if not exists idx_customer_reviews_public
   on public.customer_reviews(is_visible, updated_at desc);
+

@@ -64,6 +64,7 @@ export class BookingService {
               "id,name,description,duration_minutes,price_amount,sort_order",
             )
             .eq("active", true)
+            .eq("online_bookable", true)
             .is("archived_at", null)
             .order("sort_order"),
           this.supabase
@@ -109,6 +110,75 @@ export class BookingService {
             capacityPerBarber: settingsResult.data.capacity_per_barber,
             allowAnyBarber: settingsResult.data.allow_any_barber,
           },
+          services,
+        };
+      },
+    );
+  }
+
+  async publicServices() {
+    const version = cacheVersion(
+      await this.cache.version(redisScopes.catalogVersion(LOCATION_ID)),
+    );
+    const cacheKey = this.cache.key("cache", "public-services", LOCATION_ID, version);
+    return this.cache.getOrSet(
+      cacheKey,
+      CACHE_TTL_SECONDS.catalog,
+      async () => {
+        const [servicesResult, categoriesResult, locationsResult] = await Promise.all([
+          this.supabase
+            .from("services")
+            .select("id,name,slug,short_description,description,duration_minutes,price_amount,sort_order,featured,online_bookable,price_display_mode,category:service_categories(id,name,slug,sort_order)")
+            .eq("active", true)
+            .eq("published", true)
+            .is("archived_at", null)
+            .order("sort_order"),
+          this.supabase
+            .from("service_categories")
+            .select("id,name,slug,sort_order")
+            .eq("active", true)
+            .is("archived_at", null)
+            .order("sort_order"),
+          this.supabase
+            .from("service_locations")
+            .select("service_id,price_override,duration_override")
+            .eq("location_id", LOCATION_ID)
+            .eq("active", true),
+        ]);
+        throwOnErrors(servicesResult, categoriesResult, locationsResult);
+        const locations = new Map(
+          ((locationsResult.data ?? []) as DatabaseRow[]).map((row) => [String(row.service_id), row]),
+        );
+        const services = ((servicesResult.data ?? []) as DatabaseRow[]).map((row) => {
+          const location = locations.get(String(row.id));
+          const category = relationOne(row.category);
+          return {
+            id: row.id,
+            name: row.name,
+            slug: row.slug,
+            shortDescription: row.short_description ?? "",
+            description: row.description ?? row.short_description ?? "",
+            duration: location?.duration_override ?? row.duration_minutes,
+            price: location?.price_override ?? row.price_amount,
+            sortOrder: row.sort_order,
+            featured: Boolean(row.featured),
+            onlineBookable: Boolean(row.online_bookable),
+            priceDisplayMode: row.price_display_mode ?? "fixed",
+            category: category ? {
+              id: category.id,
+              name: category.name,
+              slug: category.slug,
+              sortOrder: category.sort_order,
+            } : null,
+          };
+        });
+        return {
+          categories: (categoriesResult.data ?? []).map((row) => ({
+            id: row.id,
+            name: row.name,
+            slug: row.slug,
+            sortOrder: row.sort_order,
+          })),
           services,
         };
       },
@@ -553,6 +623,11 @@ function metadataAvatar(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const avatarUrl = (value as DatabaseRow).avatar_url;
   return typeof avatarUrl === "string" ? avatarUrl : null;
+}
+
+function relationOne(value: unknown): DatabaseRow | null {
+  if (Array.isArray(value)) return (value[0] as DatabaseRow | undefined) ?? null;
+  return value && typeof value === "object" ? (value as DatabaseRow) : null;
 }
 
 function humanizeBookingError(message: string) {
